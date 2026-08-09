@@ -65,6 +65,33 @@ the editing boundary are rejected. Dependency files, wrappers, container
 recipes, entrypoints, workflows, and catalog metadata are not approved Team
 Source.
 
+## Validate your Team Source
+
+With a local Docker engine running, validate the current `team_source/` with:
+
+```sh
+./validate-team
+```
+
+The command uses the repository's frozen Language Environment Catalog and the
+exact core-tool commit in `core-tool.lock.json`. By default, that core checkout
+must be at `../rps-tournament`; set `RPS_CORE_PATH` if it is elsewhere. The
+pinned base runtime for your Docker server's native `linux/amd64` or
+`linux/arm64` platform must already be present in that Docker context.
+
+The command validates and freezes Team Source, builds one confidence image for
+the Docker server's native platform, runs the participant-local conformance
+suite, and completes its practice Matches. Its summary identifies every frozen
+input and the disposable local image. Source, build, readiness, protocol,
+determinism, isolation, resource, lifecycle, and Docker-host failures are
+reported separately.
+
+Participant-local validation is Advisory Validation only. It is insufficient
+for official Tournament entry and cannot produce an official Bot Artifact. If
+Docker is unavailable locally, push your Team branch and use GitHub Advisory
+validation instead; that result is also insufficient for official Tournament
+entry. Only organizer Final Validation can accept a Bot Artifact.
+
 ## Shared branch policy
 
 Use the branch name `team/<team-slug>`, where `<team-slug>` is the lowercase

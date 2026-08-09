@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""Run participant-local validation through the immutably pinned core tool."""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+from typing import Mapping, Sequence
+
+
+ROOT = Path(__file__).resolve().parent
+CATALOG = ROOT / "language_environments" / "catalog-v1" / "catalog.json"
+TEAM_SOURCE = ROOT / "team_source"
+PROFILE = "docker-execution-v1"
+
+
+def fail(area: str, detail: str, *, github_hint: bool = False) -> int:
+    print(area + " failure: " + detail.strip(), file=sys.stderr)
+    if github_hint:
+        print(
+            "No usable local Docker engine was found. Push your Team branch to use "
+            "GitHub advisory validation.",
+            file=sys.stderr,
+        )
+    print(
+        "Any local result is advisory and insufficient for official Tournament entry.",
+        file=sys.stderr,
+    )
+    return 2
+
+
+def run(arguments: Sequence[str], **options: object) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        list(arguments),
+        capture_output=True,
+        text=True,
+        timeout=3600,
+        **options,
+    )
+
+
+def core_environment(core: Path) -> Mapping[str, str]:
+    environment = os.environ.copy()
+    existing = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = str(core) + (os.pathsep + existing if existing else "")
+    return environment
+
+
+def invoke_core(
+    core: Path, module: str, arguments: Sequence[str]
+) -> subprocess.CompletedProcess[str]:
+    return run(
+        [sys.executable, "-m", "rps_runner." + module, *arguments],
+        cwd=ROOT,
+        env=core_environment(core),
+    )
+
+
+def diagnostic_area(stage: str, diagnostics: str) -> str:
+    lowered = diagnostics.lower()
+    docker_host_markers = (
+        "cannot connect to the docker",
+        "docker daemon",
+        "docker engine",
+        "active docker context",
+        "permission denied while trying to connect",
+        "could not start docker cli",
+    )
+    if any(marker in lowered for marker in docker_host_markers):
+        return "Docker-host"
+    if stage == "source":
+        return "Team Source"
+    if stage == "build":
+        return "Build"
+    categories = (
+        ("Determinism", ("nondetermin", "same-seed", "same seed")),
+        ("Readiness", ("readiness", "ready marker", "before wrapper readiness")),
+        ("Protocol", ("protocol", "invalid move", "invalid turn", "stream")),
+        ("Isolation", ("isolation", "security evidence", "network access")),
+        (
+            "Resource",
+            (
+                "resource",
+                "out of memory",
+                "oom",
+                "memory limit",
+                "process limit",
+                "open-file",
+                "open file",
+                "filesystem",
+                "timing limit",
+            ),
+        ),
+        (
+            "Lifecycle",
+            ("lifecycle", "clean shutdown", "terminated", "exited", "exit code"),
+        ),
+    )
+    for area, markers in categories:
+        if any(marker in lowered for marker in markers):
+            return area
+    return "Protocol"
+
+
+def read_object(path: Path) -> Mapping[str, object]:
+    value = json.loads(path.read_text())
+    if not isinstance(value, dict):
+        raise ValueError(str(path) + " is not a JSON object")
+    return value
+
+
+def identity(identities: Mapping[str, object], name: str) -> str:
+    value = identities.get(name)
+    if not isinstance(value, str) or not value:
+        raise ValueError("validation report omitted " + name + " identity")
+    return value
+
+
+def make_writable(root: Path) -> None:
+    if not root.exists():
+        return
+    for path in root.rglob("*"):
+        try:
+            path.chmod(0o700 if path.is_dir() else 0o600)
+        except OSError:
+            pass
+    try:
+        root.chmod(0o700)
+    except OSError:
+        pass
+
+
+def main() -> int:
+    try:
+        lock = read_object(ROOT / "core-tool.lock.json")
+        locked_commit = lock["commit"]
+        if not isinstance(locked_commit, str):
+            raise ValueError("core lock commit is not a string")
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+        return fail("Pinned core tool", str(error))
+
+    core = Path(os.environ.get("RPS_CORE_PATH", ROOT.parent / "rps-tournament")).resolve()
+    try:
+        checkout = run(["git", "-C", str(core), "rev-parse", "HEAD"])
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return fail("Pinned core tool", str(error))
+    observed_commit = checkout.stdout.strip()
+    if checkout.returncode != 0 or observed_commit != locked_commit:
+        detail = (
+            "expected checkout "
+            + locked_commit
+            + " at "
+            + str(core)
+            + "; observed "
+            + (observed_commit or checkout.stderr.strip() or "no checkout")
+        )
+        return fail("Pinned core tool", detail)
+
+    try:
+        host = run(
+            [
+                "docker",
+                "version",
+                "--format",
+                "{{.Server.Os}}/{{.Server.Arch}}",
+            ]
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return fail("Docker-host", str(error), github_hint=True)
+    platform = host.stdout.strip()
+    if host.returncode != 0 or not platform:
+        return fail(
+            "Docker-host",
+            host.stderr or "the Docker server did not report its native platform",
+            github_hint=True,
+        )
+
+    work = Path(tempfile.mkdtemp(prefix="rps-team-validation-"))
+    bundle = work / "source-bundle"
+    candidate = work / "artifact-candidate"
+    certified = work / "advisory-validation"
+    candidate_manifest: Mapping[str, object] = {}
+    try:
+        stages = (
+            (
+                "source",
+                "source_cli",
+                (
+                    "--catalog",
+                    str(CATALOG),
+                    "--environment",
+                    "python",
+                    "--source",
+                    str(TEAM_SOURCE),
+                    "--bundle",
+                    str(bundle),
+                ),
+            ),
+            (
+                "build",
+                "artifact_cli",
+                (
+                    "--catalog",
+                    str(CATALOG),
+                    "--bundle",
+                    str(bundle),
+                    "--platform",
+                    platform,
+                    "--candidate",
+                    str(candidate),
+                ),
+            ),
+            (
+                "certification",
+                "certification_cli",
+                (
+                    "--catalog",
+                    str(CATALOG),
+                    "--candidate",
+                    str(candidate),
+                    "--mode",
+                    "participant-local",
+                    "--platform",
+                    platform,
+                    "--profile",
+                    PROFILE,
+                    "--output",
+                    str(certified),
+                ),
+            ),
+        )
+        for stage, module, arguments in stages:
+            completed = invoke_core(core, module, arguments)
+            if completed.returncode != 0:
+                diagnostics = completed.stderr or completed.stdout or "core command failed"
+                area = diagnostic_area(stage, diagnostics)
+                return fail(area, diagnostics, github_hint=area == "Docker-host")
+            if stage == "build":
+                candidate_manifest = read_object(candidate / "artifact-candidate.json")
+
+        report = read_object(certified / "validation-report.json")
+        identities_value = report.get("identities")
+        checks_value = report.get("checks")
+        if not isinstance(identities_value, dict) or not isinstance(checks_value, dict):
+            raise ValueError("validation report omitted identities or checks")
+        identities = identities_value
+        image = candidate_manifest.get("retention")
+        if not isinstance(image, dict):
+            raise ValueError("candidate manifest omitted disposable image identity")
+        disposable = image.get("local_image_id")
+        if not isinstance(disposable, str):
+            raise ValueError("candidate manifest omitted disposable local image ID")
+        practice = checks_value.get("complete_smoke_match")
+        if report.get("status") != "passed" or report.get("advisory") is not True:
+            raise ValueError("core report did not record passed Advisory Validation")
+
+        print("Participant-local Advisory Validation passed")
+        print("Team Source digest: " + identity(identities, "source"))
+        print("Catalog: " + identity(identities, "catalog"))
+        print("Core tool: " + identity(identities, "core_tool") + " (commit " + locked_commit + ")")
+        print("Conformance suite: " + identity(identities, "suite"))
+        print("Build recipe: " + identity(identities, "recipe"))
+        print("Wrapper: " + identity(identities, "wrapper"))
+        print("Runtime: " + identity(identities, "runtime"))
+        print("Native platform: " + platform)
+        print("Disposable image: " + disposable)
+        print("Practice Match: " + str(practice))
+        print("Advisory validation: passed")
+        print(
+            "This local result is advisory and insufficient for official Tournament entry."
+        )
+        return 0
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+        return fail("Protocol", "could not read the pinned core result: " + str(error))
+    finally:
+        retention = candidate_manifest.get("retention")
+        if isinstance(retention, dict):
+            reference = retention.get("local_image_reference")
+            if isinstance(reference, str) and reference:
+                try:
+                    run(["docker", "image", "rm", reference])
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+        make_writable(work)
+        shutil.rmtree(work, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

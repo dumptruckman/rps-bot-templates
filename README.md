@@ -22,6 +22,17 @@ and protocol assets remain organizer-owned. See the [Team guide](TEAM_GUIDE.md)
 for the strategy contract, approved file types and limits, branch convention,
 and shared-repository honor policy.
 
+Teams with a running Docker engine can exercise the entire advisory path with
+one command:
+
+```sh
+./validate-team
+```
+
+See the [Team guide](TEAM_GUIDE.md#validate-your-team-source) for the pinned-core
+checkout prerequisite, result identities, diagnostic categories, and the firm
+boundary between Advisory Validation and official Tournament entry.
+
 ## Immutable contract
 
 The authoritative Language Environment Catalog is
