@@ -89,7 +89,7 @@ reported separately.
 Participant-local validation is Advisory Validation only. It is insufficient
 for official Tournament entry and cannot produce an official Bot Artifact. If
 Docker is unavailable locally, push your Team branch and use GitHub Advisory
-validation instead; that result is also insufficient for official Tournament
+Validation instead; that result is also insufficient for official Tournament
 entry. Only organizer Final Validation can accept a Bot Artifact.
 
 ## Shared branch policy

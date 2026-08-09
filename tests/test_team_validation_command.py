@@ -30,7 +30,11 @@ class TeamValidationCommandTests(unittest.TestCase):
             "git",
             """
             #!/bin/sh
-            printf '%s\\n' "$RPS_TEST_CORE_COMMIT"
+            if [ "$3" = rev-parse ]; then
+              printf '%s\\n' "$RPS_TEST_CORE_COMMIT"
+            elif [ "${RPS_TEST_CORE_DIRTY:-}" ]; then
+              printf '%s\\n' ' M rps_runner/source_cli.py'
+            fi
             """,
         )
         self._write_executable(
@@ -207,7 +211,7 @@ class TeamValidationCommandTests(unittest.TestCase):
             "Runtime:",
             "Native platform: linux/arm64",
             "Disposable image:",
-            "Advisory validation: passed",
+            "Advisory Validation: passed",
             "Practice Match: passed",
         ):
             with self.subTest(label=label):
@@ -218,12 +222,28 @@ class TeamValidationCommandTests(unittest.TestCase):
         cases = (
             ("source", "invalid strategy signature", "Team Source failure"),
             ("build", "Docker build failed", "Build failure"),
-            ("certification", "wrapper readiness marker was not observed", "Readiness failure"),
-            ("certification", "invalid protocol move at Turn 4", "Protocol failure"),
+            (
+                "certification",
+                "launch/readiness/lifecycle conformance failed: wrapper readiness marker was not observed",
+                "Readiness failure",
+            ),
+            (
+                "certification",
+                "protocol/timing/stream/resource conformance failed: invalid protocol move at Turn 4",
+                "Protocol failure",
+            ),
             ("certification", "same-seed behavior was nondeterministic", "Determinism failure"),
             ("certification", "candidate produced security evidence", "Isolation failure"),
-            ("certification", "container OOM resource fault", "Resource failure"),
-            ("certification", "candidate exited before clean shutdown", "Lifecycle failure"),
+            (
+                "certification",
+                "protocol/timing/stream/resource conformance failed: container OOM resource fault",
+                "Resource failure",
+            ),
+            (
+                "certification",
+                "launch/readiness/lifecycle conformance failed: candidate exited before clean shutdown",
+                "Lifecycle failure",
+            ),
         )
         for stage, message, label in cases:
             with self.subTest(stage=stage, label=label):
@@ -242,7 +262,7 @@ class TeamValidationCommandTests(unittest.TestCase):
         )
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("Docker-host failure", completed.stderr)
-        self.assertIn("GitHub advisory validation", completed.stderr)
+        self.assertIn("GitHub Advisory Validation", completed.stderr)
 
     def test_wrong_core_checkout_is_rejected_before_team_source_is_touched(self) -> None:
         completed = self.run_command(RPS_TEST_CORE_COMMIT="f" * 40)
@@ -252,12 +272,20 @@ class TeamValidationCommandTests(unittest.TestCase):
         self.assertIn(LOCK["commit"], completed.stderr)
         self.assertFalse(self.log.exists())
 
+    def test_modified_core_checkout_is_rejected_before_team_source_is_touched(self) -> None:
+        completed = self.run_command(RPS_TEST_CORE_DIRTY="1")
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("Pinned core tool failure", completed.stderr)
+        self.assertIn("tracked modifications", completed.stderr)
+        self.assertFalse(self.log.exists())
+
     def test_team_guide_documents_the_one_command_and_advisory_limit(self) -> None:
         guide = (PROJECT_ROOT / "TEAM_GUIDE.md").read_text()
         normalized_guide = " ".join(guide.split())
 
         self.assertIn("./validate-team", guide)
-        self.assertIn("GitHub Advisory", guide)
+        self.assertIn("GitHub Advisory Validation", normalized_guide)
         self.assertIn("insufficient for official Tournament entry", normalized_guide)
 
 

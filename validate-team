@@ -24,22 +24,25 @@ def fail(area: str, detail: str, *, github_hint: bool = False) -> int:
     if github_hint:
         print(
             "No usable local Docker engine was found. Push your Team branch to use "
-            "GitHub advisory validation.",
+            "GitHub Advisory Validation.",
             file=sys.stderr,
         )
     print(
-        "Any local result is advisory and insufficient for official Tournament entry.",
+        "Any local result is Advisory Validation evidence and is insufficient for "
+        "official Tournament entry.",
         file=sys.stderr,
     )
     return 2
 
 
-def run(arguments: Sequence[str], **options: object) -> subprocess.CompletedProcess[str]:
+def run(
+    arguments: Sequence[str], *, timeout: float = 10, **options: object
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         list(arguments),
         capture_output=True,
         text=True,
-        timeout=3600,
+        timeout=timeout,
         **options,
     )
 
@@ -54,8 +57,10 @@ def core_environment(core: Path) -> Mapping[str, str]:
 def invoke_core(
     core: Path, module: str, arguments: Sequence[str]
 ) -> subprocess.CompletedProcess[str]:
-    return run(
+    return subprocess.run(
         [sys.executable, "-m", "rps_runner." + module, *arguments],
+        capture_output=True,
+        text=True,
         cwd=ROOT,
         env=core_environment(core),
     )
@@ -63,6 +68,7 @@ def invoke_core(
 
 def diagnostic_area(stage: str, diagnostics: str) -> str:
     lowered = diagnostics.lower()
+    detail = lowered.rsplit("conformance failed:", 1)[-1]
     docker_host_markers = (
         "cannot connect to the docker",
         "docker daemon",
@@ -77,10 +83,10 @@ def diagnostic_area(stage: str, diagnostics: str) -> str:
         return "Team Source"
     if stage == "build":
         return "Build"
+    if "docker build" in lowered or "build failure" in lowered:
+        return "Build"
     categories = (
         ("Determinism", ("nondetermin", "same-seed", "same seed")),
-        ("Readiness", ("readiness", "ready marker", "before wrapper readiness")),
-        ("Protocol", ("protocol", "invalid move", "invalid turn", "stream")),
         ("Isolation", ("isolation", "security evidence", "network access")),
         (
             "Resource",
@@ -94,15 +100,19 @@ def diagnostic_area(stage: str, diagnostics: str) -> str:
                 "open file",
                 "filesystem",
                 "timing limit",
+                "timeout",
             ),
         ),
+        ("Readiness", ("readiness", "ready marker", "before wrapper readiness")),
         (
             "Lifecycle",
             ("lifecycle", "clean shutdown", "terminated", "exited", "exit code"),
         ),
+        ("Protocol", ("protocol", "invalid move", "invalid turn", "stream")),
     )
     for area, markers in categories:
-        if any(marker in lowered for marker in markers):
+        subject = lowered if area in {"Determinism", "Isolation"} else detail
+        if any(marker in subject for marker in markers):
             return area
     return "Protocol"
 
@@ -160,6 +170,29 @@ def main() -> int:
             + (observed_commit or checkout.stderr.strip() or "no checkout")
         )
         return fail("Pinned core tool", detail)
+    try:
+        core_status = run(
+            [
+                "git",
+                "-C",
+                str(core),
+                "status",
+                "--porcelain",
+                "--untracked-files=no",
+                "--",
+                "rps_runner",
+                "setup.cfg",
+                "pyproject.toml",
+            ]
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return fail("Pinned core tool", str(error))
+    if core_status.returncode != 0 or core_status.stdout.strip():
+        return fail(
+            "Pinned core tool",
+            "the locked checkout has tracked modifications; restore commit "
+            + locked_commit,
+        )
 
     try:
         host = run(
@@ -249,10 +282,10 @@ def main() -> int:
         if not isinstance(identities_value, dict) or not isinstance(checks_value, dict):
             raise ValueError("validation report omitted identities or checks")
         identities = identities_value
-        image = candidate_manifest.get("retention")
-        if not isinstance(image, dict):
+        retention = candidate_manifest.get("retention")
+        if not isinstance(retention, dict):
             raise ValueError("candidate manifest omitted disposable image identity")
-        disposable = image.get("local_image_id")
+        disposable = retention.get("local_image_id")
         if not isinstance(disposable, str):
             raise ValueError("candidate manifest omitted disposable local image ID")
         practice = checks_value.get("complete_smoke_match")
@@ -270,7 +303,7 @@ def main() -> int:
         print("Native platform: " + platform)
         print("Disposable image: " + disposable)
         print("Practice Match: " + str(practice))
-        print("Advisory validation: passed")
+        print("Advisory Validation: passed")
         print(
             "This local result is advisory and insufficient for official Tournament entry."
         )

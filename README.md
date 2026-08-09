@@ -22,8 +22,8 @@ and protocol assets remain organizer-owned. See the [Team guide](TEAM_GUIDE.md)
 for the strategy contract, approved file types and limits, branch convention,
 and shared-repository honor policy.
 
-Teams with a running Docker engine can exercise the entire advisory path with
-one command:
+Teams with a running Docker engine can exercise the entire Advisory Validation
+path with one command:
 
 ```sh
 ./validate-team
