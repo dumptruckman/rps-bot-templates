@@ -1,0 +1,26 @@
+name: Catalog contract
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out catalog authority
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check out pinned Tournament core
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: dumptruckman/rps-bot-tournament
+          ref: ba9242ed46023a237f76e82d1296e8af706fd48c
+          path: .core/rps-tournament
+      - name: Verify immutable companion-to-core contract
+        env:
+          RPS_CORE_PATH: .core/rps-tournament
+        run: python3 -m unittest tests/test_core_contract.py -v
