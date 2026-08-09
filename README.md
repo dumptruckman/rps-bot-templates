@@ -13,6 +13,15 @@ or commit and does not reimplement it.
 Initial implementation work is tracked as numbered issues under
 `.scratch/companion-repository/issues/`.
 
+## Team branches
+
+A fresh Team branch is ready to edit: its working strategy is
+[`team_source/strategy.py`](team_source/strategy.py). Teams must change only
+Team Source under `team_source/`; the catalog and its build, wrapper, workflow,
+and protocol assets remain organizer-owned. See the [Team guide](TEAM_GUIDE.md)
+for the strategy contract, approved file types and limits, branch convention,
+and shared-repository honor policy.
+
 ## Immutable contract
 
 The authoritative Language Environment Catalog is
