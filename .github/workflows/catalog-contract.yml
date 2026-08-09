@@ -14,11 +14,21 @@ jobs:
     steps:
       - name: Check out catalog authority
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Read immutable core lock
+        id: core_lock
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          with open("core-tool.lock.json") as stream:
+              lock = json.load(stream)
+          print("repository=" + lock["repository"])
+          print("commit=" + lock["commit"])
+          PY
       - name: Check out pinned Tournament core
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          repository: dumptruckman/rps-bot-tournament
-          ref: ba9242ed46023a237f76e82d1296e8af706fd48c
+          repository: ${{ steps.core_lock.outputs.repository }}
+          ref: ${{ steps.core_lock.outputs.commit }}
           path: .core/rps-tournament
       - name: Verify immutable companion-to-core contract
         env:

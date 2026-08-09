@@ -15,12 +15,12 @@ Initial implementation work is tracked as numbered issues under
 
 ## Immutable contract
 
-The authoritative event catalog is
+The authoritative Language Environment Catalog is
 `language_environments/catalog-v1/catalog.json`, with catalog version
 `rps-language-environment-catalog-v1`. The generic core consumer is locked by
-full commit and package version in `core-tool.lock.json`. Workflows use that same
-commit and pin third-party actions by full commit; they do not resolve a branch,
-version tag, or `latest` value.
+full commit and package version in `core-tool.lock.json`. Workflows read the core
+repository and commit from that lock and pin third-party actions by full commit;
+they do not resolve a branch, version tag, or `latest` value.
 
 The catalog owns the Python Team Source schema and template, platform runtime
 digests, networkless build recipe, wrapper and Seed Adapter, readiness contract,
@@ -48,5 +48,5 @@ python3 -m unittest discover -s tests -v
 An asset edit intentionally fails until its SHA-256 entry is updated. A template
 edit also requires updating `template_sha256` in `python/conformance.json`, then
 updating the conformance asset digest in `catalog.json`. A core-pin change fails
-until the generic fixture and participant contract still match and both pinned
-workflows name the new full commit.
+unless the exact locked checkout's package version, generic fixture, and
+participant contract still match.

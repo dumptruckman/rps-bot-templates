@@ -19,7 +19,7 @@ PROTOCOL_ENVIRONMENT = ("RPS_PROTOCOL_VERSION", "RPS_ROUNDS", "RPS_SEED")
 
 
 def seed_adapter(bot_visible_seed: str) -> random.Random:
-    """Map the bot-visible 64-bit seed to Python's deterministic RNG."""
+    """Map the Bot-visible Seed (a 64-bit value) to Python's deterministic RNG."""
 
     return random.Random(int(bot_visible_seed))
 

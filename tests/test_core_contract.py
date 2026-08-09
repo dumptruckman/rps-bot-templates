@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import configparser
 import hashlib
 import importlib.util
 import json
@@ -7,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -39,6 +41,18 @@ class ImmutableCoreContractTests(unittest.TestCase):
         lock = json.loads(CORE_LOCK.read_text())
         self.assertRegex(lock["commit"], FULL_COMMIT)
         self.assertEqual(lock["package_version"], "0.1.0")
+        self.assertRegex(lock["repository"], r"^[^/\s]+/[^/\s]+$")
+
+        checked_out_commit = subprocess.run(
+            ["git", "-C", str(CORE_PATH), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        self.assertEqual(checked_out_commit, lock["commit"])
+        package = configparser.ConfigParser()
+        package.read(CORE_PATH / "setup.cfg")
+        self.assertEqual(package["metadata"]["version"], lock["package_version"])
 
         catalog = self.catalog_data()
         self.assertEqual(
@@ -60,7 +74,9 @@ class ImmutableCoreContractTests(unittest.TestCase):
             workflow = workflow_path.read_text()
             self.assertNotIn("latest", workflow)
             self.assertNotRegex(workflow, r"uses:\s+[^\s]+@v\d+")
-            self.assertIn(lock["commit"], workflow)
+            self.assertIn("lock[\"repository\"]", workflow)
+            self.assertIn("lock[\"commit\"]", workflow)
+            self.assertIn("ref: ${{ steps.core_lock.outputs.commit }}", workflow)
             for action_ref in re.findall(r"uses:\s+[^\s]+@([^\s]+)", workflow):
                 self.assertRegex(action_ref, FULL_COMMIT)
 
