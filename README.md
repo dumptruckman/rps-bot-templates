@@ -10,5 +10,5 @@ validator, builder, conformance suite, container executor, and official
 Tournament workflow. This repository consumes that tooling by immutable version
 or commit and does not reimplement it.
 
-Initial implementation work is tracked in
-`.scratch/companion-repository/tickets.md`.
+Initial implementation work is tracked as numbered issues under
+`.scratch/companion-repository/issues/`.
