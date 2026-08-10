@@ -37,7 +37,7 @@ jobs:
         env:
           RPS_CORE_PATH: .core/rps-tournament
         run: python3 -m unittest tests/test_core_contract.py -v
-      - name: Verify immutable catalog release record
+      - name: Verify immutable Language Environment Catalog release record
         if: startsWith(github.ref, 'refs/tags/')
         env:
           RPS_CORE_PATH: .core/rps-tournament

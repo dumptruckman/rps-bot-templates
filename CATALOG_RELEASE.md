@@ -1,6 +1,7 @@
-# Freeze and release a Tournament catalog
+# Freeze and release a Language Environment Catalog
 
-The organizer publishes one immutable catalog release before Team coding begins.
+The organizer publishes one immutable Language Environment Catalog release
+before Team coding begins.
 For the first Tournament, the release tag is `catalog-v1`. It points at one exact
 repository commit and its annotated tag message is the machine-readable
 `catalog-release-v1` manifest. The manifest records the catalog, pinned core,

@@ -79,7 +79,7 @@ class CatalogReleaseTests(unittest.TestCase):
             check=True,
         )
         subprocess.run(
-            ["git", "config", "tag.gpgsign", "false"],
+            ["git", "config", "tag.gpgsign", "true"],
             cwd=repository,
             check=True,
         )

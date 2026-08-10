@@ -207,7 +207,7 @@ def _create_release(tag: str) -> dict[str, Any]:
         raise ReleaseError(f"release tag {tag!r} already exists")
     manifest = build_manifest(tag)
     annotation = json.dumps(manifest, indent=2, sort_keys=True)
-    _run("git", "tag", "--annotate", tag, "--message", annotation)
+    _run("git", "tag", "--no-sign", "--annotate", tag, "--message", annotation)
     return manifest
 
 
@@ -248,7 +248,7 @@ def _verify_release(tag: str) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Create or verify an immutable Tournament catalog release"
+        description="Create or verify an immutable Language Environment Catalog release"
     )
     parser.add_argument("command", choices=("manifest", "create", "verify"))
     parser.add_argument("tag")
@@ -261,7 +261,7 @@ def main() -> int:
         else:
             manifest = _verify_release(arguments.tag)
     except ReleaseError as error:
-        print(f"Catalog release failure: {error}", file=sys.stderr)
+        print(f"Language Environment Catalog release failure: {error}", file=sys.stderr)
         return 1
     print(json.dumps(manifest, indent=2, sort_keys=True))
     return 0
