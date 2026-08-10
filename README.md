@@ -43,6 +43,12 @@ Submission Candidate on the organizer's native ARM64 machine, runs canonical
 Final Validation, and retains a contract comparison against its GitHub Advisory
 Validation evidence without conflating the two platform-specific images.
 
+The [Tournament catalog release runbook](CATALOG_RELEASE.md) freezes all catalog,
+core, suite, profile, wrapper, recipe, dependency, action, and platform-runtime
+identities into an annotated tag before Team coding begins. It also gives Teams
+a clean-clone reproduction path and maintainers the until-completion freeze
+policy.
+
 ## Immutable contract
 
 The authoritative Language Environment Catalog is
