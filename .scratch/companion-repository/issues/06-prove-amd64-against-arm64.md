@@ -1,6 +1,6 @@
 # Prove the AMD64 signal against canonical ARM64 validation
 
-Status: resolved
+Status: needs-info
 
 Blocked by: 04
 
@@ -13,13 +13,13 @@ validation identities.
 
 ## Acceptance criteria
 
-- [x] The same frozen Team Source and Language Environment assets exercise build, wrapper readiness, protocol version 1, Seed Adapter determinism, isolation, resource limits, lifecycle, and practice-Match conformance on both native platforms.
-- [x] The GitHub lane produces a disposable single-platform AMD64 confidence image, and the organizer lane produces the canonical single-platform ARM64 Bot Artifact.
-- [x] Cross-platform evidence compares source compatibility and contract behavior without requiring equal runtime digests, image digests, or language-native random streams.
-- [x] The acceptance path uses no QEMU, multi-platform build, combined OCI index, remote registry, or GitHub-built image in the official roster.
-- [x] The retained evidence is sufficient to diagnose a rare architecture-specific failure and drive the documented compatibility-only repair policy.
+- [ ] The same frozen Team Source and Language Environment assets exercise build, wrapper readiness, protocol version 1, Seed Adapter determinism, isolation, resource limits, lifecycle, and practice-Match conformance on both native platforms.
+- [ ] The GitHub lane produces a disposable single-platform AMD64 confidence image, and the organizer lane produces the canonical single-platform ARM64 Bot Artifact.
+- [ ] Cross-platform evidence compares source compatibility and contract behavior without requiring equal runtime digests, image digests, or language-native random streams.
+- [ ] The acceptance path uses no QEMU, multi-platform build, combined OCI index, remote registry, or GitHub-built image in the official roster.
+- [ ] The retained evidence is sufficient to diagnose a rare architecture-specific failure and drive the documented compatibility-only repair policy.
 
-## Answer
+## Implementation status
 
 Added an organizer-owned `prove-amd64-against-arm64` command that consumes the
 selected commit's retained GitHub Advisory Validation evidence and exact
@@ -35,3 +35,10 @@ the source bundle, build diagnostics, both validation records, and the canonical
 Bot Artifact Manifest remain available for architecture-specific diagnosis and
 the documented compatibility-only repair process. The acceptance runbook and
 contract tests document and enforce those boundaries.
+
+The native ARM64 organizer lane passed locally for the starter Team Source. A
+genuine cross-platform proof cannot be retained until the eight predecessor
+commits and this workflow are published to GitHub, one `team/**` commit produces
+native AMD64 evidence, and that exact selected Team Source is run through this
+command. Publishing branches and starting that external run require maintainer
+authorization, so the ticket remains open rather than claiming synthetic proof.

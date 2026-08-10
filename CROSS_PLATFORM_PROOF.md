@@ -39,9 +39,9 @@ the same suite in `organizer-final` mode. It does not fetch source or images.
 check: build, wrapper readiness, protocol transcripts, Seed Adapter same-seed
 behavior, isolation, resource and timing limits, clean lifecycle, diagnostics,
 and complete practice-Match conformance. Protocol transcripts exercise protocol
-version 1 through the frozen suite and wrapper. The proof also requires identical Source
-Digest, catalog, suite, wrapper, recipe, entrypoint, platform-definition,
-execution-profile, and pinned-core identities.
+version 1 through the frozen suite and wrapper. The proof also requires
+identical Source Digest, catalog, suite, wrapper, recipe, entrypoint,
+platform-definition, execution-profile, and pinned-core identities.
 
 The proof deliberately retains architecture-specific runtime digest, image
 digest, and validation identity under separate `linux/amd64` and `linux/arm64`
@@ -60,8 +60,9 @@ the original GitHub evidence, each organizer command's stdout and stderr, the
 frozen source bundle, ARM64 candidate manifest and build diagnostics, Final
 Validation report, canonical Bot Artifact Manifest, stage progress, and the
 cross-platform comparison. A failed stage leaves its completed inputs, partial
-outputs, and logs in place so an architecture-specific failure can be diagnosed
-without substituting a different source or image.
+outputs, progress state, and a stage-specific error log in place so an
+architecture-specific failure can be diagnosed without substituting a different
+source or image.
 
 If ARM64 exposes a rare compatibility defect, follow the compatibility-only
 repair policy in `SUBMISSION_CUTOFF.md`. Preserve this failed proof, the original

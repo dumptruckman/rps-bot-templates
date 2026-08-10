@@ -93,6 +93,58 @@ def _validate_report(
     return identities, checks
 
 
+def validate_advisory_evidence(
+    *,
+    selected_commit: str,
+    eligibility: Mapping[str, Any],
+    advisory_report: Mapping[str, Any],
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    """Fail closed on retained GitHub evidence before organizer work begins."""
+    if len(selected_commit) != 40 or any(
+        character not in "0123456789abcdef" for character in selected_commit
+    ):
+        raise ValueError("selected commit must be a lowercase 40-character Git SHA")
+    for field, expected in (
+        ("result", "passed"),
+        ("authority", "github-advisory"),
+        ("source_commit", selected_commit),
+        ("platform", AMD64),
+    ):
+        _expect(eligibility.get(field), expected, "eligibility " + field)
+
+    identities, checks = _validate_report(
+        advisory_report,
+        mode="github-advisory",
+        authority="advisory",
+        platform=AMD64,
+        advisory=True,
+    )
+    source_digest = eligibility.get("source_digest")
+    if not isinstance(source_digest, str) or not source_digest.startswith("sha256:"):
+        raise ValueError("eligibility source_digest is not a SHA-256 identity")
+    _expect(identities.get("source"), source_digest, "Advisory Validation source")
+    eligibility_identity_fields = {
+        "catalog": "catalog",
+        "core_tool": "core_tool",
+        "suite": "suite",
+        "recipe": "recipe",
+        "wrapper": "wrapper",
+        "execution_profile": "profile",
+    }
+    for evidence_field, identity_field in eligibility_identity_fields.items():
+        _expect(
+            eligibility.get(evidence_field),
+            identities.get(identity_field),
+            "eligibility " + evidence_field,
+        )
+    _expect(
+        eligibility.get("validation_identity"),
+        advisory_report.get("validation_identity"),
+        "Advisory Validation identity",
+    )
+    return identities, checks
+
+
 def build_cross_platform_proof(
     *,
     selected_commit: str,
@@ -104,25 +156,10 @@ def build_cross_platform_proof(
     final_report: Mapping[str, Any],
 ) -> Mapping[str, Any]:
     """Validate and combine retained native-platform evidence."""
-    if len(selected_commit) != 40 or any(
-        character not in "0123456789abcdef" for character in selected_commit
-    ):
-        raise ValueError("selected commit must be a lowercase 40-character Git SHA")
-
-    for field, expected in (
-        ("result", "passed"),
-        ("authority", "github-advisory"),
-        ("source_commit", selected_commit),
-        ("platform", AMD64),
-    ):
-        _expect(eligibility.get(field), expected, "eligibility " + field)
-
-    advisory_identities, advisory_checks = _validate_report(
-        advisory_report,
-        mode="github-advisory",
-        authority="advisory",
-        platform=AMD64,
-        advisory=True,
+    advisory_identities, advisory_checks = validate_advisory_evidence(
+        selected_commit=selected_commit,
+        eligibility=eligibility,
+        advisory_report=advisory_report,
     )
     final_identities, final_checks = _validate_report(
         final_report,
@@ -142,26 +179,6 @@ def build_cross_platform_proof(
     ):
         _expect(value, source_digest, label)
 
-    eligibility_identity_fields = {
-        "catalog": "catalog",
-        "core_tool": "core_tool",
-        "suite": "suite",
-        "recipe": "recipe",
-        "wrapper": "wrapper",
-        "execution_profile": "profile",
-    }
-    for evidence_field, identity_field in eligibility_identity_fields.items():
-        if evidence_field in eligibility:
-            _expect(
-                eligibility[evidence_field],
-                advisory_identities.get(identity_field),
-                "eligibility " + evidence_field,
-            )
-    _expect(
-        eligibility.get("validation_identity"),
-        advisory_report.get("validation_identity"),
-        "Advisory Validation identity",
-    )
     versions = _mapping(source_bundle.get("versions"), "source bundle versions")
     _expect(
         versions.get("catalog"),
@@ -241,13 +258,12 @@ class ProofRun:
         self.output = output
         self.stages: dict[str, str] = {}
 
-    def record(self, stage: str, result: str) -> None:
-        self.stages[stage] = result
+    def _write_progress(self, result: str) -> None:
         (self.output / "proof-progress.json").write_text(
             json.dumps(
                 {
                     "proof_progress_format_version": "cross-platform-proof-progress-v1",
-                    "result": "failed" if "failed" in self.stages.values() else "running",
+                    "result": result,
                     "stages": self.stages,
                 },
                 indent=2,
@@ -255,6 +271,18 @@ class ProofRun:
             )
             + "\n"
         )
+
+    def record(self, stage: str, result: str) -> None:
+        self.stages[stage] = result
+        proof_result = "failed" if "failed" in self.stages.values() else "running"
+        self._write_progress(proof_result)
+
+    def record_failure(self, stage: str, error: Exception) -> None:
+        (self.output / (stage + ".error.log")).write_text(str(error) + "\n")
+        self.record(stage, "failed")
+
+    def complete(self) -> None:
+        self._write_progress("passed")
 
     def command(
         self,
@@ -311,6 +339,11 @@ def _run(options: argparse.Namespace) -> None:
     advisory_report_path = options.advisory_evidence / "validation-report.json"
     eligibility = _read_object(eligibility_path, "eligibility evidence")
     advisory_report = _read_object(advisory_report_path, "Advisory Validation report")
+    validate_advisory_evidence(
+        selected_commit=options.selected_commit,
+        eligibility=eligibility,
+        advisory_report=advisory_report,
+    )
 
     lock = _read_object(CORE_LOCK, "core tool lock")
     core_commit = subprocess.run(
@@ -361,11 +394,15 @@ def _run(options: argparse.Namespace) -> None:
         environment=environment,
     )
     source_bundle = _read_object(bundle / "source-bundle.json", "source bundle")
-    _expect(
-        source_bundle.get("source_digest"),
-        eligibility.get("source_digest"),
-        "selected Team Source digest",
-    )
+    try:
+        _expect(
+            source_bundle.get("source_digest"),
+            eligibility.get("source_digest"),
+            "selected Team Source digest",
+        )
+    except ValueError as error:
+        run.record_failure("reconcile-selected-source", error)
+        raise
     run.record("reconcile-selected-source", "passed")
     run.command(
         "build-arm64-candidate",
@@ -406,37 +443,30 @@ def _run(options: argparse.Namespace) -> None:
         environment=environment,
     )
 
-    proof = build_cross_platform_proof(
-        selected_commit=options.selected_commit,
-        eligibility=eligibility,
-        advisory_report=advisory_report,
-        source_bundle=source_bundle,
-        arm64_candidate=_read_object(
-            candidate / "artifact-candidate.json", "ARM64 artifact candidate"
-        ),
-        bot_artifact_manifest=_read_object(
-            certified / "bot-artifact-manifest.json", "Bot Artifact Manifest"
-        ),
-        final_report=_read_object(
-            certified / "validation-report.json", "Final Validation report"
-        ),
-    )
+    try:
+        proof = build_cross_platform_proof(
+            selected_commit=options.selected_commit,
+            eligibility=eligibility,
+            advisory_report=advisory_report,
+            source_bundle=source_bundle,
+            arm64_candidate=_read_object(
+                candidate / "artifact-candidate.json", "ARM64 artifact candidate"
+            ),
+            bot_artifact_manifest=_read_object(
+                certified / "bot-artifact-manifest.json", "Bot Artifact Manifest"
+            ),
+            final_report=_read_object(
+                certified / "validation-report.json", "Final Validation report"
+            ),
+        )
+    except ValueError as error:
+        run.record_failure("compare-native-platforms", error)
+        raise
     (options.output / "cross-platform-proof.json").write_text(
         json.dumps(proof, indent=2, sort_keys=True) + "\n"
     )
     run.record("compare-native-platforms", "passed")
-    (options.output / "proof-progress.json").write_text(
-        json.dumps(
-            {
-                "proof_progress_format_version": "cross-platform-proof-progress-v1",
-                "result": "passed",
-                "stages": run.stages,
-            },
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n"
-    )
+    run.complete()
 
 
 def main(arguments: Sequence[str] | None = None) -> int:

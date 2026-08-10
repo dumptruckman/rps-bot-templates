@@ -4,6 +4,7 @@ import importlib.machinery
 import importlib.util
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 
 
@@ -80,6 +81,12 @@ class CrossPlatformProofTests(unittest.TestCase):
             "runtime_digest": "sha256:" + "5" * 64,
             "disposable_image_identity": "sha256:" + "c" * 64,
             "validation_identity": "validation-report-v1@sha256:" + "9" * 64,
+            "catalog": self.advisory_identities["catalog"],
+            "core_tool": self.advisory_identities["core_tool"],
+            "suite": self.advisory_identities["suite"],
+            "recipe": self.advisory_identities["recipe"],
+            "wrapper": self.advisory_identities["wrapper"],
+            "execution_profile": self.advisory_identities["profile"],
         }
         self.advisory = {
             "status": "passed",
@@ -174,6 +181,39 @@ class CrossPlatformProofTests(unittest.TestCase):
                 bot_artifact_manifest=self.manifest,
                 final_report=self.final,
             )
+
+    def test_advisory_evidence_is_rejected_before_an_arm64_run(self) -> None:
+        module = load_command_module()
+        self.eligibility["source_commit"] = "0" * 40
+
+        with self.assertRaisesRegex(ValueError, "source_commit"):
+            module.validate_advisory_evidence(
+                selected_commit=self.commit,
+                eligibility=self.eligibility,
+                advisory_report=self.advisory,
+            )
+
+        command = COMMAND.read_text()
+        run_body = command.split("def _run(", 1)[1]
+        self.assertLess(
+            run_body.index("validate_advisory_evidence("),
+            run_body.index('"build-arm64-candidate"'),
+        )
+
+    def test_comparison_failure_is_retained_as_a_failed_stage(self) -> None:
+        module = load_command_module()
+        with tempfile.TemporaryDirectory() as directory:
+            run = module.ProofRun(Path(directory))
+            run.record_failure("compare-native-platforms", ValueError("suite drift"))
+
+            progress = (Path(directory) / "proof-progress.json").read_text()
+            diagnostic = (
+                Path(directory) / "compare-native-platforms.error.log"
+            ).read_text()
+
+        self.assertIn('"result": "failed"', progress)
+        self.assertIn('"compare-native-platforms": "failed"', progress)
+        self.assertEqual(diagnostic, "suite drift\n")
 
     def test_command_uses_native_arm64_and_the_pinned_core_contract(self) -> None:
         command = COMMAND.read_text()
