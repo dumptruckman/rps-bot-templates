@@ -46,6 +46,16 @@ jobs:
       - name: Verify native Linux/AMD64 Docker
         run: |
           test "$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')" = "$PLATFORM"
+      - name: Cache the pinned Linux/AMD64 base runtime
+        run: |
+          runtime_reference="$(python3 - <<'PY'
+          import json
+          with open("language_environments/catalog-v1/python/runtimes.json") as stream:
+              runtimes = json.load(stream)
+          print(runtimes["platforms"]["linux/amd64"]["image"])
+          PY
+          )"
+          docker pull --platform "$PLATFORM" "$runtime_reference"
       - name: Create evidence workspace
         run: mkdir -p .advisory
       - name: Freeze Team Source
