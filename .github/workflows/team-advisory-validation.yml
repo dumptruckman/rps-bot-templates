@@ -41,6 +41,7 @@ jobs:
           repository: ${{ steps.core_lock.outputs.repository }}
           ref: ${{ steps.core_lock.outputs.commit }}
           path: .core/rps-tournament
+          token: ${{ secrets.TOURNEY_PAT }}
           persist-credentials: false
       - name: Verify native Linux/AMD64 Docker
         run: |
