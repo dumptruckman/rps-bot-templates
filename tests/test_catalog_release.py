@@ -268,6 +268,9 @@ class CatalogReleaseTests(unittest.TestCase):
         self.assertIn(
             './freeze-tournament-catalog verify "${GITHUB_REF_NAME}"', workflow
         )
+        self.assertIn(
+            '"refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"', workflow
+        )
         self.assertIn(".core/", (PROJECT_ROOT / ".gitignore").read_text().splitlines())
 
 
