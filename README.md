@@ -38,6 +38,11 @@ how an organizer selects a completed pre-cutoff green commit, exports that exact
 Team Source, reconciles its identities, and handles offline delivery or an
 exceptional compatibility-only repair.
 
+The [native AMD64-to-ARM64 proof](CROSS_PLATFORM_PROOF.md) rebuilds one selected
+Submission Candidate on the organizer's native ARM64 machine, runs canonical
+Final Validation, and retains a contract comparison against its GitHub Advisory
+Validation evidence without conflating the two platform-specific images.
+
 ## Immutable contract
 
 The authoritative Language Environment Catalog is

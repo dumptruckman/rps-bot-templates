@@ -1,0 +1,454 @@
+#!/usr/bin/env python3
+"""Rebuild one AMD64-proven Submission Candidate and retain ARM64 proof."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+from typing import Any, Mapping, Sequence
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+CATALOG = PROJECT_ROOT / "language_environments" / "catalog-v1" / "catalog.json"
+CORE_LOCK = PROJECT_ROOT / "core-tool.lock.json"
+AMD64 = "linux/amd64"
+ARM64 = "linux/arm64"
+PROFILE = "docker-execution-v1"
+SHARED_IDENTITIES = (
+    "source",
+    "wrapper",
+    "recipe",
+    "entrypoint",
+    "catalog",
+    "suite",
+    "platform",
+    "profile",
+    "core_tool",
+    "builder_core_tool",
+)
+CONTRACT_CHECKS = {
+    "source_validation": "passed-by-frozen-bundle",
+    "networkless_build": "passed-by-verified-current-builder-record",
+    "image_identity": "passed",
+    "readiness": "passed",
+    "clean_shutdown": "passed",
+    "protocol_transcripts": "passed",
+    "same_seed_behavior": "passed",
+    "timing_and_stream_limits": "passed",
+    "resource_enforcement": "passed-through-profile",
+    "isolation": "passed-through-profile",
+    "diagnostics": "passed",
+    "complete_smoke_match": "passed",
+    "practice_match_result_gate": "not-applicable",
+}
+
+
+def _mapping(value: object, label: str) -> Mapping[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError(label + " must be a JSON object")
+    return value
+
+
+def _expect(actual: object, expected: object, label: str) -> None:
+    if actual != expected:
+        raise ValueError(
+            label + " mismatch: expected " + repr(expected) + ", got " + repr(actual)
+        )
+
+
+def _read_object(path: Path, label: str) -> Mapping[str, Any]:
+    try:
+        return _mapping(json.loads(path.read_text()), label)
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(label + " is unreadable: " + str(error)) from error
+
+
+def _validate_report(
+    report: Mapping[str, Any],
+    *,
+    mode: str,
+    authority: str,
+    platform: str,
+    advisory: bool,
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    for field, expected in (
+        ("status", "passed"),
+        ("mode", mode),
+        ("authority", authority),
+        ("advisory", advisory),
+        ("canonical_tournament_eligible", not advisory),
+        ("platform", platform),
+        ("profile", PROFILE),
+    ):
+        _expect(report.get(field), expected, platform + " report " + field)
+    identities = _mapping(report.get("identities"), platform + " identities")
+    checks = _mapping(report.get("checks"), platform + " checks")
+    for name, expected in CONTRACT_CHECKS.items():
+        _expect(checks.get(name), expected, platform + " check " + name)
+    return identities, checks
+
+
+def build_cross_platform_proof(
+    *,
+    selected_commit: str,
+    eligibility: Mapping[str, Any],
+    advisory_report: Mapping[str, Any],
+    source_bundle: Mapping[str, Any],
+    arm64_candidate: Mapping[str, Any],
+    bot_artifact_manifest: Mapping[str, Any],
+    final_report: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    """Validate and combine retained native-platform evidence."""
+    if len(selected_commit) != 40 or any(
+        character not in "0123456789abcdef" for character in selected_commit
+    ):
+        raise ValueError("selected commit must be a lowercase 40-character Git SHA")
+
+    for field, expected in (
+        ("result", "passed"),
+        ("authority", "github-advisory"),
+        ("source_commit", selected_commit),
+        ("platform", AMD64),
+    ):
+        _expect(eligibility.get(field), expected, "eligibility " + field)
+
+    advisory_identities, advisory_checks = _validate_report(
+        advisory_report,
+        mode="github-advisory",
+        authority="advisory",
+        platform=AMD64,
+        advisory=True,
+    )
+    final_identities, final_checks = _validate_report(
+        final_report,
+        mode="organizer-final",
+        authority="canonical",
+        platform=ARM64,
+        advisory=False,
+    )
+
+    source_digest = eligibility.get("source_digest")
+    for label, value in (
+        ("Advisory Validation source", advisory_identities.get("source")),
+        ("organizer source bundle", source_bundle.get("source_digest")),
+        ("ARM64 candidate", arm64_candidate.get("source_digest")),
+        ("Bot Artifact Manifest", bot_artifact_manifest.get("source_digest")),
+        ("Final Validation source", final_identities.get("source")),
+    ):
+        _expect(value, source_digest, label)
+
+    eligibility_identity_fields = {
+        "catalog": "catalog",
+        "core_tool": "core_tool",
+        "suite": "suite",
+        "recipe": "recipe",
+        "wrapper": "wrapper",
+        "execution_profile": "profile",
+    }
+    for evidence_field, identity_field in eligibility_identity_fields.items():
+        if evidence_field in eligibility:
+            _expect(
+                eligibility[evidence_field],
+                advisory_identities.get(identity_field),
+                "eligibility " + evidence_field,
+            )
+    _expect(
+        eligibility.get("validation_identity"),
+        advisory_report.get("validation_identity"),
+        "Advisory Validation identity",
+    )
+    versions = _mapping(source_bundle.get("versions"), "source bundle versions")
+    _expect(
+        versions.get("catalog"),
+        advisory_identities.get("catalog"),
+        "source bundle catalog",
+    )
+
+    shared: dict[str, Any] = {}
+    for identity in SHARED_IDENTITIES:
+        advisory_value = advisory_identities.get(identity)
+        _expect(
+            final_identities.get(identity),
+            advisory_value,
+            "shared identity " + identity,
+        )
+        shared[identity] = advisory_value
+    for check, advisory_value in advisory_checks.items():
+        _expect(final_checks.get(check), advisory_value, "shared contract check " + check)
+
+    for field, expected in (
+        ("status", "validated"),
+        ("authority", "canonical"),
+        ("platform", ARM64),
+    ):
+        _expect(bot_artifact_manifest.get(field), expected, "Bot Artifact " + field)
+    _expect(arm64_candidate.get("platform"), ARM64, "ARM64 candidate platform")
+    _expect(
+        bot_artifact_manifest.get("validation_identity"),
+        final_report.get("validation_identity"),
+        "Final Validation identity",
+    )
+    _expect(
+        bot_artifact_manifest.get("identities"),
+        final_identities,
+        "Bot Artifact identities",
+    )
+    for field in ("runtime_digest", "artifact_digest"):
+        _expect(
+            bot_artifact_manifest.get(field),
+            arm64_candidate.get(field),
+            "ARM64 " + field,
+        )
+
+    return {
+        "cross_platform_proof_format_version": "cross-platform-proof-v1",
+        "result": "passed",
+        "selected_source_commit": selected_commit,
+        "source_digest": source_digest,
+        "shared_contract": {
+            "identities": shared,
+            "checks": dict(CONTRACT_CHECKS),
+            "meaning": "source-compatibility-and-contract-behavior",
+        },
+        "architecture_specific": {
+            AMD64: {
+                "authority": "advisory",
+                "image_role": "disposable-confidence-image",
+                "runtime_digest": eligibility.get("runtime_digest"),
+                "image_digest": advisory_identities.get("image"),
+                "validation_identity": advisory_report.get("validation_identity"),
+            },
+            ARM64: {
+                "authority": "canonical",
+                "image_role": "bot-artifact",
+                "runtime_digest": arm64_candidate.get("runtime_digest"),
+                "image_digest": arm64_candidate.get("artifact_digest"),
+                "validation_identity": final_report.get("validation_identity"),
+            },
+        },
+        "language_native_random_stream_comparison": "not-required",
+        "official_roster_source": "organizer-final-linux-arm64-only",
+    }
+
+
+class ProofRun:
+    def __init__(self, output: Path) -> None:
+        self.output = output
+        self.stages: dict[str, str] = {}
+
+    def record(self, stage: str, result: str) -> None:
+        self.stages[stage] = result
+        (self.output / "proof-progress.json").write_text(
+            json.dumps(
+                {
+                    "proof_progress_format_version": "cross-platform-proof-progress-v1",
+                    "result": "failed" if "failed" in self.stages.values() else "running",
+                    "stages": self.stages,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+
+    def command(
+        self,
+        stage: str,
+        arguments: Sequence[str],
+        *,
+        environment: Mapping[str, str],
+    ) -> None:
+        self.record(stage, "running")
+        with (self.output / (stage + ".stdout.log")).open("w") as stdout, (
+            self.output / (stage + ".stderr.log")
+        ).open("w") as stderr:
+            completed = subprocess.run(
+                list(arguments),
+                cwd=PROJECT_ROOT,
+                env=dict(environment),
+                stdout=stdout,
+                stderr=stderr,
+                text=True,
+            )
+        if completed.returncode != 0:
+            self.record(stage, "failed")
+            raise RuntimeError(
+                stage + " failed; retained stdout and stderr in " + str(self.output)
+            )
+        self.record(stage, "passed")
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Rebuild one GitHub-proven Submission Candidate on native ARM64 and "
+            "retain cross-platform contract evidence"
+        )
+    )
+    parser.add_argument("--advisory-evidence", required=True, type=Path)
+    parser.add_argument("--source", required=True, type=Path)
+    parser.add_argument("--selected-commit", required=True)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--core-path",
+        type=Path,
+        default=Path(os.environ.get("RPS_CORE_PATH", PROJECT_ROOT.parent / "rps-tournament")),
+    )
+    return parser
+
+
+def _run(options: argparse.Namespace) -> None:
+    if options.output.exists() or options.output.is_symlink():
+        raise ValueError("output already exists and will not be replaced")
+    if not options.source.is_dir():
+        raise ValueError("selected Team Source must be a directory")
+    eligibility_path = options.advisory_evidence / "eligibility-evidence.json"
+    advisory_report_path = options.advisory_evidence / "validation-report.json"
+    eligibility = _read_object(eligibility_path, "eligibility evidence")
+    advisory_report = _read_object(advisory_report_path, "Advisory Validation report")
+
+    lock = _read_object(CORE_LOCK, "core tool lock")
+    core_commit = subprocess.run(
+        ["git", "-C", str(options.core_path), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    _expect(core_commit, lock.get("commit"), "pinned core commit")
+    docker_platform = subprocess.run(
+        ["docker", "version", "--format", "{{.Server.Os}}/{{.Server.Arch}}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    _expect(docker_platform, ARM64, "native Docker server platform")
+
+    options.output.mkdir(parents=True)
+    shutil.copytree(options.advisory_evidence, options.output / "github-advisory")
+    run = ProofRun(options.output)
+    run.record("inputs", "passed")
+    environment = dict(os.environ)
+    existing_pythonpath = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = str(options.core_path) + (
+        os.pathsep + existing_pythonpath if existing_pythonpath else ""
+    )
+    organizer = options.output / "organizer-final"
+    organizer.mkdir()
+    bundle = organizer / "source-bundle"
+    candidate = organizer / "artifact-candidate"
+    certified = organizer / "certified-bot-artifact"
+
+    run.command(
+        "freeze-source",
+        (
+            sys.executable,
+            "-m",
+            "rps_runner.source_cli",
+            "--catalog",
+            str(CATALOG),
+            "--environment",
+            "python",
+            "--source",
+            str(options.source.resolve()),
+            "--bundle",
+            str(bundle),
+        ),
+        environment=environment,
+    )
+    source_bundle = _read_object(bundle / "source-bundle.json", "source bundle")
+    _expect(
+        source_bundle.get("source_digest"),
+        eligibility.get("source_digest"),
+        "selected Team Source digest",
+    )
+    run.record("reconcile-selected-source", "passed")
+    run.command(
+        "build-arm64-candidate",
+        (
+            sys.executable,
+            "-m",
+            "rps_runner.artifact_cli",
+            "--catalog",
+            str(CATALOG),
+            "--bundle",
+            str(bundle),
+            "--platform",
+            ARM64,
+            "--candidate",
+            str(candidate),
+        ),
+        environment=environment,
+    )
+    run.command(
+        "final-validation",
+        (
+            sys.executable,
+            "-m",
+            "rps_runner.certification_cli",
+            "--catalog",
+            str(CATALOG),
+            "--candidate",
+            str(candidate),
+            "--mode",
+            "organizer-final",
+            "--platform",
+            ARM64,
+            "--profile",
+            PROFILE,
+            "--output",
+            str(certified),
+        ),
+        environment=environment,
+    )
+
+    proof = build_cross_platform_proof(
+        selected_commit=options.selected_commit,
+        eligibility=eligibility,
+        advisory_report=advisory_report,
+        source_bundle=source_bundle,
+        arm64_candidate=_read_object(
+            candidate / "artifact-candidate.json", "ARM64 artifact candidate"
+        ),
+        bot_artifact_manifest=_read_object(
+            certified / "bot-artifact-manifest.json", "Bot Artifact Manifest"
+        ),
+        final_report=_read_object(
+            certified / "validation-report.json", "Final Validation report"
+        ),
+    )
+    (options.output / "cross-platform-proof.json").write_text(
+        json.dumps(proof, indent=2, sort_keys=True) + "\n"
+    )
+    run.record("compare-native-platforms", "passed")
+    (options.output / "proof-progress.json").write_text(
+        json.dumps(
+            {
+                "proof_progress_format_version": "cross-platform-proof-progress-v1",
+                "result": "passed",
+                "stages": run.stages,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+
+
+def main(arguments: Sequence[str] | None = None) -> int:
+    options = _parser().parse_args(arguments)
+    try:
+        _run(options)
+    except (OSError, subprocess.SubprocessError, ValueError, RuntimeError) as error:
+        print("prove-amd64-against-arm64: " + str(error), file=sys.stderr)
+        return 2
+    print("native AMD64 Advisory Validation and ARM64 Final Validation proof passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
