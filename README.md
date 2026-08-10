@@ -33,6 +33,11 @@ See the [Team guide](TEAM_GUIDE.md#validate-your-team-source) for the pinned-cor
 checkout prerequisite, result identities, diagnostic categories, and the firm
 boundary between Advisory Validation and official Tournament entry.
 
+The [submission cutoff and manual handoff policy](SUBMISSION_CUTOFF.md) defines
+how an organizer selects a completed pre-cutoff green commit, exports that exact
+Team Source, reconciles its identities, and handles offline delivery or an
+exceptional compatibility-only repair.
+
 ## Immutable contract
 
 The authoritative Language Environment Catalog is

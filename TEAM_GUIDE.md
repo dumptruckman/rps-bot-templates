@@ -105,6 +105,13 @@ Docker is unavailable locally, push your Team branch and use GitHub Advisory
 Validation instead; that result is also insufficient for official Tournament
 entry. Only organizer Final Validation can accept a Bot Artifact.
 
+Before the declared deadline, note the full SHA of any earlier green commit you
+want selected instead of your latest completed green commit. The organizer uses
+the [submission cutoff and manual handoff policy](SUBMISSION_CUTOFF.md) to select
+and export the exact Team Source. A GitHub result remains advisory after
+selection; only organizer Final Validation of a newly built ARM64 image can
+accept a Bot Artifact.
+
 ## Shared branch policy
 
 Use the branch name `team/<team-slug>`, where `<team-slug>` is the lowercase
