@@ -1,6 +1,6 @@
 # Prove the AMD64 signal against canonical ARM64 validation
 
-Status: needs-info
+Status: ready-for-human
 
 Blocked by: 04
 
