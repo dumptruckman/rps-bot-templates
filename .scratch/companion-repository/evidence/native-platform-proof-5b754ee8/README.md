@@ -8,6 +8,7 @@
 
 `cross-platform-proof.json` is the comparison record. The platform directories
 retain the source, build, conformance, runtime, image, and validation evidence
-used to produce it. The AMD64 confidence image was disposable and removed by
-the GitHub lane. The ARM64 Bot Artifact was built independently and is the only
-canonical artifact represented here.
+used to produce it; the root-level stdout and stderr logs retain each organizer
+command's diagnostics. The AMD64 confidence image was disposable and removed
+by the GitHub lane. The ARM64 Bot Artifact was built independently and is the
+only canonical artifact represented here.

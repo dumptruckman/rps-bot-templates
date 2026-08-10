@@ -47,13 +47,21 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         workflow = self.workflow
 
         self.assertIn(
-            'language_environments/catalog-v1/python/runtimes.json', workflow
+            'from rps_runner.language_environment import load_catalog', workflow
         )
+        self.assertEqual(
+            workflow.count('load_catalog(Path(os.environ["CATALOG"]))'), 2
+        )
+        self.assertIn('assets["base_runtime"].content', workflow)
         self.assertIn(
             'runtimes["platforms"]["linux/amd64"]["image"]', workflow
         )
         self.assertIn(
             'docker pull --platform "$PLATFORM" "$runtime_reference"', workflow
+        )
+        self.assertNotIn(
+            'with open("language_environments/catalog-v1/python/runtimes.json")',
+            workflow,
         )
         self.assertNotIn("docker push", workflow.lower())
 

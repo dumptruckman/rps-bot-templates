@@ -49,8 +49,14 @@ jobs:
         run: |
           runtime_reference="$(python3 - <<'PY'
           import json
-          with open("language_environments/catalog-v1/python/runtimes.json") as stream:
-              runtimes = json.load(stream)
+          import os
+          from pathlib import Path
+          from rps_runner.language_environment import load_catalog
+
+          catalog_contract = load_catalog(Path(os.environ["CATALOG"]))
+          runtimes = json.loads(
+              catalog_contract.environment("python").assets["base_runtime"].content
+          )
           print(runtimes["platforms"]["linux/amd64"]["image"])
           PY
           )"
