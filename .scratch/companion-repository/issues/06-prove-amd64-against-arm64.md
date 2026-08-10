@@ -36,9 +36,16 @@ Bot Artifact Manifest remain available for architecture-specific diagnosis and
 the documented compatibility-only repair process. The acceptance runbook and
 contract tests document and enforce those boundaries.
 
-The native ARM64 organizer lane passed locally for the starter Team Source. A
-genuine cross-platform proof cannot be retained until the eight predecessor
-commits and this workflow are published to GitHub, one `team/**` commit produces
-native AMD64 evidence, and that exact selected Team Source is run through this
-command. Publishing branches and starting that external run require maintainer
-authorization, so the ticket remains open rather than claiming synthetic proof.
+The native ARM64 organizer lane passed locally for the starter Team Source. The
+temporary `team/native-platform-proof` branch was published at commit
+`00e34711cf59c2396ccdfac13bec54449a8e697b`, but GitHub run `31351896384`
+stopped before validation because the pinned `dumptruckman/rps-bot-tournament`
+repository is intentionally private. A repository-scoped `GITHUB_TOKEN` cannot
+read that separate private repository, and a Team-controlled workflow must not
+receive a broader PAT or deploy credential.
+
+The maintainer will publish the core repository shortly before the work
+Tournament. At that point, rerun the temporary branch's `Team Advisory
+Validation`, download its genuine native AMD64 evidence, and pass the same
+selected Team Source through this command on native ARM64. Until then, the
+ticket remains open rather than claiming synthetic cross-platform proof.
