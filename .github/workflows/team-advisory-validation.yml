@@ -1,0 +1,245 @@
+name: Team Advisory Validation
+
+on:
+  push:
+    branches: ["team/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: team-advisory-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CATALOG: language_environments/catalog-v1/catalog.json
+  PLATFORM: linux/amd64
+  PYTHONPATH: .core/rps-tournament
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the exact Team commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Read immutable core lock
+        id: core_lock
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          with open("core-tool.lock.json") as stream:
+              lock = json.load(stream)
+          print("repository=" + lock["repository"])
+          print("commit=" + lock["commit"])
+          PY
+      - name: Install pinned Tournament core
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ steps.core_lock.outputs.repository }}
+          ref: ${{ steps.core_lock.outputs.commit }}
+          path: .core/rps-tournament
+          persist-credentials: false
+      - name: Verify native Linux/AMD64 Docker
+        run: |
+          test "$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')" = "$PLATFORM"
+      - name: Create evidence workspace
+        run: mkdir -p .advisory
+      - name: Freeze Team Source
+        id: source
+        continue-on-error: true
+        run: |
+          python3 -m rps_runner.source_cli \
+            --catalog "$CATALOG" \
+            --environment python \
+            --source team_source \
+            --bundle .advisory/source-bundle
+      - name: Build disposable Linux/AMD64 confidence image
+        id: build
+        if: steps.source.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 -m rps_runner.artifact_cli \
+            --catalog "$CATALOG" \
+            --bundle .advisory/source-bundle \
+            --platform "$PLATFORM" \
+            --candidate .advisory/artifact-candidate
+      - name: Run GitHub Advisory Validation
+        id: advisory_validation
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 -m rps_runner.certification_cli \
+            --catalog "$CATALOG" \
+            --candidate .advisory/artifact-candidate \
+            --mode github-advisory \
+            --platform "$PLATFORM" \
+            --profile docker-execution-v1 \
+            --output .advisory/advisory-validation
+      - name: Write commit-specific eligibility evidence
+        id: evidence
+        if: always()
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          CORE_COMMIT: ${{ steps.core_lock.outputs.commit }}
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          ADVISORY_VALIDATION_OUTCOME: ${{ steps.advisory_validation.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+
+          root = Path(".advisory")
+          destination = root / "evidence"
+          destination.mkdir(parents=True, exist_ok=True)
+
+          def read_json_object_or_empty(path):
+              try:
+                  value = json.loads(path.read_text())
+                  return value if isinstance(value, dict) else {}
+              except (OSError, json.JSONDecodeError):
+                  return {}
+
+          def get_nested_value(value, *keys):
+              for key in keys:
+                  if not isinstance(value, dict):
+                      return None
+                  value = value.get(key)
+              return value
+
+          source = read_json_object_or_empty(
+              root / "source-bundle" / "source-bundle.json"
+          )
+          candidate = read_json_object_or_empty(
+              root / "artifact-candidate" / "artifact-candidate.json"
+          )
+          report_path = root / "advisory-validation" / "validation-report.json"
+          report = read_json_object_or_empty(report_path)
+          unavailable = "not-produced"
+          fallback_validation_identities = {
+              "catalog": "unavailable",
+              "core_tool": "unavailable",
+              "suite": "unavailable",
+              "recipe": "unavailable",
+              "wrapper": "unavailable",
+              "runtime_digest": "unavailable",
+              "execution_profile": "unavailable",
+          }
+          try:
+              from rps_runner.artifact_certification import (
+                  SUITE_VERSION,
+                  _core_tool_identity,
+              )
+              from rps_runner.execution_profile import INITIAL_EXECUTION_PROFILE
+              from rps_runner.language_environment import load_catalog
+
+              catalog_contract = load_catalog(Path(os.environ["CATALOG"]))
+              language_environment = catalog_contract.environment("python")
+              conformance = language_environment.assets["conformance"]
+              runtime_catalog = json.loads(
+                  language_environment.assets["base_runtime"].content
+              )
+              runtime_reference = runtime_catalog["platforms"][
+                  os.environ["PLATFORM"]
+              ]["image"]
+              fallback_validation_identities = {
+                  "catalog": catalog_contract.identity,
+                  "core_tool": _core_tool_identity(),
+                  "suite": SUITE_VERSION + "@" + conformance.digest,
+                  "recipe": language_environment.assets["recipe"].identity,
+                  "wrapper": language_environment.assets["wrapper"].identity,
+                  "runtime_digest": runtime_reference.rsplit("@", 1)[1],
+                  "execution_profile": INITIAL_EXECUTION_PROFILE.identity,
+              }
+          except (ImportError, KeyError, OSError, TypeError, ValueError):
+              pass
+          outcomes = {
+              "source": os.environ.get("SOURCE_OUTCOME", "unknown"),
+              "build": os.environ.get("BUILD_OUTCOME", "unknown"),
+              "advisory_validation": os.environ.get(
+                  "ADVISORY_VALIDATION_OUTCOME", "unknown"
+              ),
+          }
+          passed = (
+              all(value == "success" for value in outcomes.values())
+              and report.get("status") == "passed"
+              and report.get("mode") == "github-advisory"
+              and report.get("platform") == os.environ["PLATFORM"]
+          )
+          evidence = {
+              "evidence_format_version": "team-advisory-evidence-v1",
+              "result": "passed" if passed else "failed",
+              "authority": "github-advisory",
+              "source_commit": os.environ.get("SOURCE_COMMIT"),
+              "source_digest": source.get("source_digest") or unavailable,
+              "catalog": get_nested_value(report, "identities", "catalog")
+                  or get_nested_value(candidate, "identities", "catalog")
+                  or fallback_validation_identities["catalog"],
+              "core_tool": get_nested_value(report, "identities", "core_tool")
+                  or get_nested_value(candidate, "identities", "core_tool")
+                  or fallback_validation_identities["core_tool"],
+              "core_tool_commit": os.environ.get("CORE_COMMIT"),
+              "suite": get_nested_value(report, "identities", "suite")
+                  or fallback_validation_identities["suite"],
+              "recipe": get_nested_value(report, "identities", "recipe")
+                  or get_nested_value(candidate, "identities", "recipe")
+                  or fallback_validation_identities["recipe"],
+              "wrapper": get_nested_value(report, "identities", "wrapper")
+                  or get_nested_value(candidate, "identities", "wrapper")
+                  or fallback_validation_identities["wrapper"],
+              "runtime_digest": candidate.get("runtime_digest")
+                  or fallback_validation_identities["runtime_digest"],
+              "platform": os.environ["PLATFORM"],
+              "disposable_image_identity": get_nested_value(
+                  candidate, "retention", "local_image_id"
+              ) or unavailable,
+              "execution_profile": get_nested_value(
+                  report, "identities", "profile"
+              ) or fallback_validation_identities["execution_profile"],
+              "validation_identity": report.get("validation_identity"),
+              "practice_match_result_gate": get_nested_value(
+                  report, "checks", "practice_match_result_gate"
+              ),
+              "stage_outcomes": outcomes,
+          }
+          (destination / "eligibility-evidence.json").write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + "\n"
+          )
+          if report_path.is_file():
+              shutil.copyfile(report_path, destination / "validation-report.json")
+
+          lines = [
+              "## GitHub Advisory Validation",
+              "",
+              "- Result: **" + evidence["result"] + "**",
+              "- Source commit: `" + str(evidence["source_commit"]) + "`",
+              "- Source Digest: `" + str(evidence["source_digest"]) + "`",
+              "- Platform: `" + evidence["platform"] + "`",
+              "- Authority: Advisory Validation only; insufficient for official Tournament entry.",
+          ]
+          (root / "summary.md").write_text("\n".join(lines) + "\n")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as outputs:
+              outputs.write("result=" + evidence["result"] + "\n")
+          PY
+          cat .advisory/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove disposable confidence image
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          image_reference="$(python3 -c 'import json; print(json.load(open(".advisory/artifact-candidate/artifact-candidate.json"))["retention"]["local_image_reference"])')"
+          docker image rm "$image_reference" || true
+      - name: Retain Advisory Validation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: team-advisory-${{ github.sha }}
+          path: .advisory/evidence
+          if-no-files-found: error
+          retention-days: 90
+      - name: Fail a nonconforming Submission Candidate
+        if: always() && steps.evidence.outputs.result != 'passed'
+        run: exit 1

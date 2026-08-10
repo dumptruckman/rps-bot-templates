@@ -68,6 +68,10 @@ class ImmutableCoreContractTests(unittest.TestCase):
 
         workflow_paths = [
             PROJECT_ROOT / ".github" / "workflows" / "catalog-contract.yml",
+            PROJECT_ROOT
+            / ".github"
+            / "workflows"
+            / "team-advisory-validation.yml",
             CATALOG.parent / "python" / "workflow.yml",
         ]
         for workflow_path in workflow_paths:

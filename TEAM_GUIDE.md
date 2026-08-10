@@ -86,6 +86,19 @@ input and the disposable local image. Source, build, readiness, protocol,
 determinism, isolation, resource, lifecycle, and Docker-host failures are
 reported separately.
 
+GitHub automatically checks every commit pushed to a `team/**` branch on native
+Linux/AMD64. The check uses the exact source commit, frozen catalog, and pinned
+core tool; it builds one disposable `linux/amd64` confidence image and never
+publishes that image. A practice Match proves protocol compatibility, but its
+score or winner does not affect whether an otherwise conforming Submission
+Candidate passes.
+
+The Actions run summary shows the result. Its `team-advisory-<commit>` artifact
+retains commit-specific eligibility evidence and the conformance report for 90
+days, including the Source Digest and every frozen validation identity. A newer
+push cancels a superseded in-progress run on the same Team branch without
+removing the latest completed green candidate or its evidence.
+
 Participant-local validation is Advisory Validation only. It is insufficient
 for official Tournament entry and cannot produce an official Bot Artifact. If
 Docker is unavailable locally, push your Team branch and use GitHub Advisory
