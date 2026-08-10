@@ -1,0 +1,54 @@
+{
+  "architecture_specific": {
+    "linux/amd64": {
+      "authority": "advisory",
+      "image_digest": "sha256:52d9257ea5bd81644c966d17c10ad16986492aa6533159c408b33349f467725a",
+      "image_role": "disposable-confidence-image",
+      "runtime_digest": "sha256:69e18bd8d831d88e0ef70239dc7771ab7c28bc296ae78ac75cde71e60aa4434f",
+      "validation_identity": "validation-report-v1@sha256:317536506ca727a4dbcf6a95311e8a8c062134bb4dd9c1f698f573a84d73658b"
+    },
+    "linux/arm64": {
+      "authority": "canonical",
+      "image_digest": "sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550",
+      "image_role": "bot-artifact",
+      "runtime_digest": "sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e",
+      "validation_identity": "validation-report-v1@sha256:680a6420b5426b60e6b97ea5d1be16a761eeae6bf03d435f21a2b9082003ad7b"
+    }
+  },
+  "cross_platform_proof_format_version": "cross-platform-proof-v1",
+  "language_native_random_stream_comparison": "not-required",
+  "official_roster_source": "organizer-final-linux-arm64-only",
+  "result": "passed",
+  "selected_source_commit": "5b754ee8bf3ea3166eeade9b6a53b80751739078",
+  "shared_contract": {
+    "checks": {
+      "clean_shutdown": "passed",
+      "complete_smoke_match": "passed",
+      "diagnostics": "passed",
+      "image_identity": "passed",
+      "isolation": "passed-through-profile",
+      "networkless_build": "passed-by-verified-current-builder-record",
+      "practice_match_result_gate": "not-applicable",
+      "protocol_transcripts": "passed",
+      "readiness": "passed",
+      "resource_enforcement": "passed-through-profile",
+      "same_seed_behavior": "passed",
+      "source_validation": "passed-by-frozen-bundle",
+      "timing_and_stream_limits": "passed"
+    },
+    "identities": {
+      "builder_core_tool": "rps-core-tool-v1@sha256:e86cf425dc33fa2551b2b6ebc270b8618e1889c051f960915c5efef935b39770",
+      "catalog": "rps-language-environment-catalog-v1@sha256:738095aa5d757a1eea34f966c111d64e11b18fb30e011707ebf2fe0b2beaa9ec",
+      "core_tool": "rps-core-tool-v1@sha256:2670b046b4aad97137e07692ace180b4a1ccd6c0cabf3763a9762b7a91c92b0a",
+      "entrypoint": "python-entrypoint-v1@sha256:e663e70bb05c143591a06d352e325cb181136c5910fe62717056b0ed3fcb1e08",
+      "platform": "oci-platforms-v1@sha256:e5a635c659f52ff7433c1ab4f8d086a8b66689a84fe522e85b72b29801005b03",
+      "profile": "docker-execution-v1@sha256:54b69b7eae0b15191a13b2b14fcc75c4537358b971b8f84a65731589b8ad3bb1",
+      "recipe": "python-build-recipe-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
+      "source": "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a",
+      "suite": "python-artifact-conformance-v1@sha256:17cf3871a7ad4bf420a9cf68280c445055fcb77c73bdfcc9e441e6fc9eb4f49c",
+      "wrapper": "python-wrapper-v3@sha256:4244f4ad0757324aaae2a10202d5f5302c428272d32c395595e6300d52a0797a"
+    },
+    "meaning": "source-compatibility-and-contract-behavior"
+  },
+  "source_digest": "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a"
+}

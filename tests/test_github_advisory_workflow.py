@@ -43,6 +43,20 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         self.assertIn("--profile docker-execution-v1", workflow)
         self.assertIn("CATALOG: " + catalog, workflow)
 
+    def test_ephemeral_runner_fetches_only_the_catalog_pinned_base_runtime(self) -> None:
+        workflow = self.workflow
+
+        self.assertIn(
+            'language_environments/catalog-v1/python/runtimes.json', workflow
+        )
+        self.assertIn(
+            'runtimes["platforms"]["linux/amd64"]["image"]', workflow
+        )
+        self.assertIn(
+            'docker pull --platform "$PLATFORM" "$runtime_reference"', workflow
+        )
+        self.assertNotIn("docker push", workflow.lower())
+
     def test_job_has_read_only_authority_and_cancels_only_superseded_branch_work(self) -> None:
         workflow = self.workflow
 

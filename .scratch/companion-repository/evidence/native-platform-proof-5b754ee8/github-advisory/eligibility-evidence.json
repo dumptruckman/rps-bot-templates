@@ -1,0 +1,24 @@
+{
+  "authority": "github-advisory",
+  "catalog": "rps-language-environment-catalog-v1@sha256:738095aa5d757a1eea34f966c111d64e11b18fb30e011707ebf2fe0b2beaa9ec",
+  "core_tool": "rps-core-tool-v1@sha256:2670b046b4aad97137e07692ace180b4a1ccd6c0cabf3763a9762b7a91c92b0a",
+  "core_tool_commit": "ba9242ed46023a237f76e82d1296e8af706fd48c",
+  "disposable_image_identity": "sha256:52d9257ea5bd81644c966d17c10ad16986492aa6533159c408b33349f467725a",
+  "evidence_format_version": "team-advisory-evidence-v1",
+  "execution_profile": "docker-execution-v1@sha256:54b69b7eae0b15191a13b2b14fcc75c4537358b971b8f84a65731589b8ad3bb1",
+  "platform": "linux/amd64",
+  "practice_match_result_gate": "not-applicable",
+  "recipe": "python-build-recipe-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
+  "result": "passed",
+  "runtime_digest": "sha256:69e18bd8d831d88e0ef70239dc7771ab7c28bc296ae78ac75cde71e60aa4434f",
+  "source_commit": "5b754ee8bf3ea3166eeade9b6a53b80751739078",
+  "source_digest": "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a",
+  "stage_outcomes": {
+    "advisory_validation": "success",
+    "build": "success",
+    "source": "success"
+  },
+  "suite": "python-artifact-conformance-v1@sha256:17cf3871a7ad4bf420a9cf68280c445055fcb77c73bdfcc9e441e6fc9eb4f49c",
+  "validation_identity": "validation-report-v1@sha256:317536506ca727a4dbcf6a95311e8a8c062134bb4dd9c1f698f573a84d73658b",
+  "wrapper": "python-wrapper-v3@sha256:4244f4ad0757324aaae2a10202d5f5302c428272d32c395595e6300d52a0797a"
+}

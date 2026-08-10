@@ -1,0 +1,57 @@
+#0 building with "orbstack" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 270B done
+#1 WARN: InvalidDefaultArgInFrom: Default value for ARG ${RPS_BASE_RUNTIME} results in empty or invalid base image name (line 2)
+#1 DONE 0.0s
+
+#2 [context team] load .dockerignore
+#2 transferring team: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python@sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e
+#3 DONE 0.5s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [artifact 1/4] FROM docker.io/library/python@sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e
+#5 resolve docker.io/library/python@sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e 0.0s done
+#5 DONE 0.0s
+
+#6 [context team] load from client
+#6 transferring team: 553B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 4.39kB done
+#7 DONE 0.0s
+
+#8 [artifact 2/4] COPY --from=team / /opt/rps/team/
+#8 CACHED
+
+#9 [artifact 3/4] COPY organizer/wrapper.py /opt/rps/wrapper.py
+#9 CACHED
+
+#10 [artifact 4/4] WORKDIR /opt/rps/team
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:b63610170c77371d29ebe432f97c85ea3541e8812f6d268c57dfcb7bbab517af 0.0s done
+#11 exporting config sha256:8e9f6a87436260c474a56debf5c7b3aa4726ede104b2871960a0a91100c8aba3 0.0s done
+#11 exporting attestation manifest sha256:2a69bc29fffbd54d178e83c49d7c2be9eb2df16cd493f8bc4b518841ec4b2743 0.0s done
+#11 exporting manifest list sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550
+#11 exporting manifest list sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550 0.0s done
+#11 naming to docker.io/library/rps-tournament-candidate:675d7dbf9b98481ba0cbf847620156ae done
+#11 unpacking to docker.io/library/rps-tournament-candidate:675d7dbf9b98481ba0cbf847620156ae 0.1s done
+#11 DONE 0.3s
+
+#12 resolving provenance for metadata file
+#12 DONE 0.0s
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - InvalidDefaultArgInFrom: Default value for ARG ${RPS_BASE_RUNTIME} results in empty or invalid base image name (line 2)
+
+View build details: docker-desktop://dashboard/build/orbstack/orbstack/x17ob6ze7cxmvf23fvt0e8t8w

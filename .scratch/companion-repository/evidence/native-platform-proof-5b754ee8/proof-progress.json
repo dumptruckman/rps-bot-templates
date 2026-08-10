@@ -1,0 +1,12 @@
+{
+  "proof_progress_format_version": "cross-platform-proof-progress-v1",
+  "result": "passed",
+  "stages": {
+    "build-arm64-candidate": "passed",
+    "compare-native-platforms": "passed",
+    "final-validation": "passed",
+    "freeze-source": "passed",
+    "inputs": "passed",
+    "reconcile-selected-source": "passed"
+  }
+}

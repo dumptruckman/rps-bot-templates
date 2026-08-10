@@ -49,9 +49,11 @@ records. It compares source compatibility and contract behavior, not binary
 identity. Equal language-native random streams are not required: determinism is
 proved independently inside each platform's Seed Adapter and runtime.
 
-This path uses no QEMU, no multi-platform build, no combined OCI index, no
-remote registry, and no GitHub-built image in the official roster. The two
-builds remain independent single-platform builds.
+This path uses no QEMU, no multi-platform build, and no combined OCI index. An
+ephemeral runner may fetch a pinned base runtime by its catalog digest, but Bot
+Artifact images are never pushed to or pulled from a registry. The disposable
+GitHub confidence image never enters the official roster or the ARM64 Docker
+context; the two builds remain independent single-platform builds.
 
 ## Retention and failure handling
 

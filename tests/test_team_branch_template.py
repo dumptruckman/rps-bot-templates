@@ -60,23 +60,26 @@ class TeamBranchTemplateTests(unittest.TestCase):
 
     def test_fresh_branch_strategy_runs_through_the_organizer_wrapper(self) -> None:
         seed = "8675309"
-        completed = subprocess.run(
-            [
-                sys.executable,
-                str(CATALOG_PATH.parent / "python" / "wrapper.py"),
-            ],
-            cwd=TEAM_SOURCE,
-            env={
-                "RPS_PROTOCOL_VERSION": "rps-jsonl-v1",
-                "RPS_ROUNDS": "1",
-                "RPS_SEED": seed,
-            },
-            input="1\n-\n-\n",
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=True,
-        )
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "team-source"
+            shutil.copytree(TEAM_SOURCE, source)
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(CATALOG_PATH.parent / "python" / "wrapper.py"),
+                ],
+                cwd=source,
+                env={
+                    "RPS_PROTOCOL_VERSION": "rps-jsonl-v1",
+                    "RPS_ROUNDS": "1",
+                    "RPS_SEED": seed,
+                },
+                input="1\n-\n-\n",
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=True,
+            )
 
         self.assertEqual(completed.stderr, "RPS_READY_V1\n")
         self.assertEqual(

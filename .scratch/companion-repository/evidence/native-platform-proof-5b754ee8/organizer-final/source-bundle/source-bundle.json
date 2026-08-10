@@ -1,0 +1,31 @@
+{
+  "bundle_format_version": "source-bundle-v1",
+  "catalog_digest": "sha256:738095aa5d757a1eea34f966c111d64e11b18fb30e011707ebf2fe0b2beaa9ec",
+  "contract_only": false,
+  "environment": "python",
+  "files": [
+    "strategy.py"
+  ],
+  "participant_contract": {
+    "callable": "choose_move",
+    "signature": "choose_move(turn, my_history, opponent_history, rng) -> move",
+    "static_validation": "single-unconditional-function-v1",
+    "version": "choose-move-contract-v1"
+  },
+  "source_digest": "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a",
+  "versions": {
+    "base_runtime": "python-runtime-v1@sha256:e5a635c659f52ff7433c1ab4f8d086a8b66689a84fe522e85b72b29801005b03",
+    "build_target": "python-build-target-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
+    "catalog": "rps-language-environment-catalog-v1@sha256:738095aa5d757a1eea34f966c111d64e11b18fb30e011707ebf2fe0b2beaa9ec",
+    "conformance": "python-conformance-v1@sha256:17cf3871a7ad4bf420a9cf68280c445055fcb77c73bdfcc9e441e6fc9eb4f49c",
+    "dependency_definition": "python-dependencies-v1@sha256:e0ed0014ce0451273c43fa32686ee1526bbe16659c87fce7c6f4609569010f04",
+    "descriptor": "python-language-environment-v1@sha256:0aa7dfa44491dd2246f6a7702d98a2a3b1ad7b1396f03f3c0879e0b71e068787",
+    "entrypoint": "python-entrypoint-v1@sha256:e663e70bb05c143591a06d352e325cb181136c5910fe62717056b0ed3fcb1e08",
+    "platform": "oci-platforms-v1@sha256:e5a635c659f52ff7433c1ab4f8d086a8b66689a84fe522e85b72b29801005b03",
+    "readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
+    "recipe": "python-build-recipe-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
+    "source_schema": "python-source-schema-v1@sha256:39b8a2620e437812488aa1a3f72cb6ff59c7651011162723cfcca92d479bb911",
+    "workflow": "source-validation-workflow-v1@sha256:bec2e55305b699b8f7c28b9f0b02ad3d65dd91d419bbcf2f93e70161aac144b6",
+    "wrapper": "python-wrapper-v3@sha256:4244f4ad0757324aaae2a10202d5f5302c428272d32c395595e6300d52a0797a"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "artifact_candidate_format_version": "artifact-candidate-v1",
+  "artifact_digest": "sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550",
+  "build_identity": "build-v1@sha256:db53741881aef2914010cb04a3a175b719eaeb2abf1ee390d0c10f847613d446",
+  "diagnostics": {
+    "bytes": 2337,
+    "file": "build.log",
+    "limit_bytes": 65536
+  },
+  "entrypoint": [
+    "python3",
+    "-I",
+    "/opt/rps/wrapper.py"
+  ],
+  "identities": {
+    "catalog": "rps-language-environment-catalog-v1@sha256:738095aa5d757a1eea34f966c111d64e11b18fb30e011707ebf2fe0b2beaa9ec",
+    "core_tool": "rps-core-tool-v1@sha256:e86cf425dc33fa2551b2b6ebc270b8618e1889c051f960915c5efef935b39770",
+    "entrypoint": "python-entrypoint-v1@sha256:e663e70bb05c143591a06d352e325cb181136c5910fe62717056b0ed3fcb1e08",
+    "language_environment": "python-language-environment-v1@sha256:0aa7dfa44491dd2246f6a7702d98a2a3b1ad7b1396f03f3c0879e0b71e068787",
+    "platform": "oci-platforms-v1@sha256:e5a635c659f52ff7433c1ab4f8d086a8b66689a84fe522e85b72b29801005b03",
+    "recipe": "python-build-recipe-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
+    "suite_candidate": "python-conformance-v1@sha256:17cf3871a7ad4bf420a9cf68280c445055fcb77c73bdfcc9e441e6fc9eb4f49c",
+    "wrapper": "python-wrapper-v3@sha256:4244f4ad0757324aaae2a10202d5f5302c428272d32c395595e6300d52a0797a"
+  },
+  "image": {
+    "local_image_id": "sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550",
+    "manifest_digest": "sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550"
+  },
+  "language": "python",
+  "platform": "linux/arm64",
+  "retention": {
+    "authority": "sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550",
+    "local_image_id": "sha256:7a80f82fd07c2aa0d560cd62835fdec38bdfcd0b905e3bbf768a119801346550",
+    "local_image_reference": "rps-tournament-candidate:675d7dbf9b98481ba0cbf847620156ae",
+    "store": "active-docker-context"
+  },
+  "runtime": {
+    "digest": "sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e",
+    "identity": "linux-arm64-python-runtime-v1@sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e",
+    "reference": "docker.io/library/python@sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e"
+  },
+  "runtime_digest": "sha256:8c5de2243cba89f49a93e05cacb78e27058bcaa69c148baac127005da03af39e",
+  "source_digest": "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a",
+  "status": "suite-candidate"
+}
