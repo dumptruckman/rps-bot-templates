@@ -1,8 +1,11 @@
 # Freeze and release the first Tournament Language Environment Catalog
 
-Status: resolved
+Status: blocked
 
 Blocked by: 05, 06
+
+Release gate: organizer declaration that the repository and Tournament are ready
+for the Team coding-period freeze
 
 ## What to build
 
@@ -12,14 +15,14 @@ core-tool pin, and validation identity frozen together.
 
 ## Acceptance criteria
 
-- [x] A clean clone can create a Team branch, validate the starter strategy locally or through GitHub, and reproduce the documented advisory evidence without unpublished files or maintainer state.
-- [x] The release records the exact repository commit, catalog identity, core-tool pin, conformance-suite identity, execution-profile identity, wrapper and recipe versions, and both platform-specific runtime digests.
+- [ ] A clean clone can create a Team branch, validate the starter strategy locally or through GitHub, and reproduce the documented advisory evidence without unpublished files or maintainer state.
+- [ ] The release records the exact repository commit, catalog identity, core-tool pin, conformance-suite identity, execution-profile identity, wrapper and recipe versions, and both platform-specific runtime digests.
 - [x] The release process verifies catalog content digests and rejects mutable core, runtime, action, or dependency references.
-- [x] The released Python environment uses only the standard library and organizer-pinned contents; neither Team-local nor GitHub Advisory Validation requires build-time package downloads.
+- [ ] The released Python environment uses only the standard library and organizer-pinned contents; neither Team-local nor GitHub Advisory Validation requires build-time package downloads.
 - [x] The release notes preserve the distinction between a Submission Candidate, a disposable advisory image, and the canonical organizer-built Bot Artifact.
 - [x] A maintainer checklist freezes the catalog before coding begins and prohibits routine catalog, wrapper, recipe, base-image, or conformance changes until the Tournament completes.
 
-## Answer
+## Implementation progress
 
 Added an organizer-owned Language Environment Catalog release command that
 content-verifies every catalog asset through the pinned core, rejects mutable
@@ -41,3 +44,14 @@ history needed to materialize the exact private core-tool commit without a
 cross-repository credential, package download, or maintainer checkout. Team-
 local and active GitHub workflows use the same bundled pin; the release process
 records and verifies its SHA-256 digest with the core commit and package version.
+
+## Comments
+
+### 2026-08-10 — Freeze withdrawn
+
+The release tooling is implemented, but the repository and Tournament are not
+ready to begin the coding-period freeze. The premature local and remote
+`catalog-v1` tags were removed. Do not recreate or move that tag until the
+organizer explicitly declares Tournament readiness; at that point, rerun the
+maintainer checklist and create a new immutable release from the then-current
+commit.
