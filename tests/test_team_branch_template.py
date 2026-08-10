@@ -20,7 +20,7 @@ CATALOG_PATH = (
 TEAM_SOURCE = PROJECT_ROOT / "team_source"
 TEAM_GUIDE = PROJECT_ROOT / "TEAM_GUIDE.md"
 CORE_PATH = Path(
-    os.environ.get("RPS_CORE_PATH", PROJECT_ROOT.parent / "rps-tournament")
+    os.environ.get("RPS_CORE_PATH", PROJECT_ROOT / ".core" / "rps-tournament")
 )
 
 

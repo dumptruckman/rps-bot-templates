@@ -35,3 +35,9 @@ correction policy, and explicit authority distinction among a Submission
 Candidate, disposable advisory image, and canonical organizer-built Bot
 Artifact. The Catalog contract workflow re-verifies published release tags, and
 contract tests cover the required identities and every mutable-input rejection.
+
+The release also carries a content-addressed Git bundle containing the complete
+history needed to materialize the exact private core-tool commit without a
+cross-repository credential, package download, or maintainer checkout. Team-
+local and active GitHub workflows use the same bundled pin; the release process
+records and verifies its SHA-256 digest with the core commit and package version.

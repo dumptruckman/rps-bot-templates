@@ -20,9 +20,9 @@ Complete this checklist before Team coding begins:
 - [ ] Confirm `main` contains the canonical starter in `team_source/` and all
   documentation, workflows, catalog assets, and release tooling needed by a
   clean clone.
-- [ ] Check out the commit from `core-tool.lock.json` in `../rps-tournament`, or
-  set `RPS_CORE_PATH` to an exact clean checkout. Do not install the core as an
-  unpublished editable package.
+- [ ] Run `./materialize-core-tool` and confirm it checks out the commit from
+  `core-tool.lock.json` under `.core/rps-tournament`. Do not replace the bundled
+  history with an unpublished editable package.
 - [ ] Pre-pull the catalog's digest-pinned Linux/AMD64 and Linux/ARM64 base
   runtimes on the native hosts that will use them.
 - [ ] Run `python3 -m unittest discover -s tests -v` with the pinned core checkout.
@@ -53,11 +53,11 @@ catalog asset digest drift.
 
 ## Publish the release
 
-Use the pinned core without downloading build dependencies:
+Use the bundled pinned core without cloning a private repository or downloading
+build dependencies:
 
 ```sh
-git -C ../rps-tournament switch --detach \
-  "$(python3 -c 'import json; print(json.load(open("core-tool.lock.json"))["commit"])')"
+./materialize-core-tool
 python3 -m unittest discover -s tests -v
 ./validate-team
 ./freeze-tournament-catalog manifest catalog-v1
@@ -80,11 +80,9 @@ the released catalog and validate the unchanged starter as follows:
 
 ```sh
 git clone https://github.com/dumptruckman/rps-bot-templates.git
-git clone https://github.com/dumptruckman/rps-bot-tournament.git
 cd rps-bot-templates
 git checkout catalog-v1
-git -C ../rps-bot-tournament checkout \
-  "$(python3 -c 'import json; print(json.load(open("core-tool.lock.json"))["commit"])')"
+./materialize-core-tool
 ./freeze-tournament-catalog verify catalog-v1
 git switch --create team/<team-slug> catalog-v1
 ./validate-team

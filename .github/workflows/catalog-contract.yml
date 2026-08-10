@@ -17,22 +17,8 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-      - name: Read immutable core lock
-        id: core_lock
-        run: |
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
-          with open("core-tool.lock.json") as stream:
-              lock = json.load(stream)
-          print("repository=" + lock["repository"])
-          print("commit=" + lock["commit"])
-          PY
-      - name: Check out pinned Tournament core
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          repository: ${{ steps.core_lock.outputs.repository }}
-          ref: ${{ steps.core_lock.outputs.commit }}
-          path: .core/rps-tournament
+      - name: Materialize bundled pinned Tournament core
+        run: ./materialize-core-tool .core/rps-tournament
       - name: Verify immutable companion-to-core contract
         env:
           RPS_CORE_PATH: .core/rps-tournament

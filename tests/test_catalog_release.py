@@ -15,7 +15,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 COMMAND = PROJECT_ROOT / "freeze-tournament-catalog"
 RUNBOOK = PROJECT_ROOT / "CATALOG_RELEASE.md"
 CORE_LOCK = json.loads((PROJECT_ROOT / "core-tool.lock.json").read_text())
-CORE_REPOSITORY = PROJECT_ROOT.parent / "rps-tournament"
 
 
 class CatalogReleaseTests(unittest.TestCase):
@@ -24,19 +23,10 @@ class CatalogReleaseTests(unittest.TestCase):
         cls.temporary_directory = tempfile.TemporaryDirectory()
         cls.core_path = Path(cls.temporary_directory.name) / "rps-tournament"
         subprocess.run(
-            [
-                "git",
-                "clone",
-                "--quiet",
-                "--no-checkout",
-                str(CORE_REPOSITORY),
-                str(cls.core_path),
-            ],
+            [str(PROJECT_ROOT / "materialize-core-tool"), str(cls.core_path)],
             check=True,
-        )
-        subprocess.run(
-            ["git", "-C", str(cls.core_path), "checkout", "--quiet", CORE_LOCK["commit"]],
-            check=True,
+            capture_output=True,
+            text=True,
         )
 
     @classmethod
@@ -60,7 +50,9 @@ class CatalogReleaseTests(unittest.TestCase):
         shutil.copytree(
             PROJECT_ROOT,
             repository,
-            ignore=shutil.ignore_patterns(".git", ".scratch", "__pycache__", "*.pyc"),
+            ignore=shutil.ignore_patterns(
+                ".git", ".core", ".scratch", "__pycache__", "*.pyc"
+            ),
         )
         subprocess.run(["git", "init", "--quiet"], cwd=repository, check=True)
         subprocess.run(
@@ -223,6 +215,11 @@ class CatalogReleaseTests(unittest.TestCase):
         dependencies.write_text("requests==2.32.0\n")
         update_asset_digest(dependency_repository, "dependency_definition")
         cases["dependency"] = (dependency_repository, "standard-library-only")
+
+        bundle_repository = self.make_release_repository("-bundle")
+        bundle = bundle_repository / "core-tool.bundle"
+        bundle.write_bytes(bundle.read_bytes() + b"mutable")
+        cases["bundled core"] = (bundle_repository, "bundle digest")
 
         for name, (repository, diagnostic) in cases.items():
             with self.subTest(input=name):

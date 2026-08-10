@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import configparser
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -46,7 +47,38 @@ def _read_object(path: Path) -> dict[str, Any]:
 
 
 def _core_path() -> Path:
-    return Path(os.environ.get("RPS_CORE_PATH", PROJECT_ROOT.parent / "rps-tournament")).resolve()
+    configured = os.environ.get("RPS_CORE_PATH")
+    if configured:
+        return Path(configured).resolve()
+    core_path = PROJECT_ROOT / ".core" / "rps-tournament"
+    if not core_path.exists():
+        _run(str(PROJECT_ROOT / "materialize-core-tool"), str(core_path))
+    return core_path
+
+
+def _verify_core_bundle(lock: dict[str, Any]) -> None:
+    try:
+        bundle_record = lock["bundle"]
+        relative_path = Path(bundle_record["path"])
+        expected_digest = bundle_record["sha256"]
+    except (KeyError, TypeError) as error:
+        raise ReleaseError("core-tool.lock.json must pin the bundled core history") from error
+    unresolved_bundle_path = PROJECT_ROOT / relative_path
+    bundle_path = unresolved_bundle_path.resolve()
+    if (
+        relative_path.is_absolute()
+        or PROJECT_ROOT not in bundle_path.parents
+        or unresolved_bundle_path.is_symlink()
+        or not bundle_path.is_file()
+    ):
+        raise ReleaseError("core tool bundle must be a repository-owned regular file")
+    if not FULL_DIGEST.fullmatch(str(expected_digest)):
+        raise ReleaseError("core tool bundle must be pinned by a full SHA-256 digest")
+    actual_digest = "sha256:" + hashlib.sha256(bundle_path.read_bytes()).hexdigest()
+    if actual_digest != expected_digest:
+        raise ReleaseError(
+            f"core tool bundle digest is {actual_digest}; expected {expected_digest}"
+        )
 
 
 def _verify_core_pin(core_path: Path, lock: dict[str, Any]) -> None:
@@ -123,6 +155,7 @@ def build_manifest(tag: str) -> dict[str, Any]:
 
     core_path = _core_path()
     lock = _read_object(CORE_LOCK_PATH)
+    _verify_core_bundle(lock)
     _verify_core_pin(core_path, lock)
     catalog_data = _read_object(CATALOG_PATH)
     _verify_immutable_references(catalog_data)

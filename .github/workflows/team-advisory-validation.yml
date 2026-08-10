@@ -25,23 +25,16 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Read immutable core lock
+      - name: Materialize bundled pinned Tournament core
         id: core_lock
         run: |
+          ./materialize-core-tool .core/rps-tournament
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json
           with open("core-tool.lock.json") as stream:
               lock = json.load(stream)
-          print("repository=" + lock["repository"])
           print("commit=" + lock["commit"])
           PY
-      - name: Install pinned Tournament core
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          repository: ${{ steps.core_lock.outputs.repository }}
-          ref: ${{ steps.core_lock.outputs.commit }}
-          path: .core/rps-tournament
-          persist-credentials: false
       - name: Verify native Linux/AMD64 Docker
         run: |
           test "$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')" = "$PLATFORM"

@@ -17,7 +17,9 @@ import unittest
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CATALOG = PROJECT_ROOT / "language_environments" / "catalog-v1" / "catalog.json"
 CORE_LOCK = PROJECT_ROOT / "core-tool.lock.json"
-CORE_PATH = Path(os.environ.get("RPS_CORE_PATH", PROJECT_ROOT.parent / "rps-tournament"))
+CORE_PATH = Path(
+    os.environ.get("RPS_CORE_PATH", PROJECT_ROOT / ".core" / "rps-tournament")
+)
 FULL_SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
 
@@ -42,6 +44,15 @@ class ImmutableCoreContractTests(unittest.TestCase):
         self.assertRegex(lock["commit"], FULL_COMMIT)
         self.assertEqual(lock["package_version"], "0.1.0")
         self.assertRegex(lock["repository"], r"^[^/\s]+/[^/\s]+$")
+        self.assertEqual(lock["bundle"]["path"], "core-tool.bundle")
+        self.assertRegex(lock["bundle"]["sha256"], FULL_SHA256)
+        self.assertEqual(
+            lock["bundle"]["sha256"],
+            "sha256:"
+            + hashlib.sha256(
+                (PROJECT_ROOT / lock["bundle"]["path"]).read_bytes()
+            ).hexdigest(),
+        )
 
         checked_out_commit = subprocess.run(
             ["git", "-C", str(CORE_PATH), "rev-parse", "HEAD"],
@@ -78,9 +89,14 @@ class ImmutableCoreContractTests(unittest.TestCase):
             workflow = workflow_path.read_text()
             self.assertNotIn("latest", workflow)
             self.assertNotRegex(workflow, r"uses:\s+[^\s]+@v\d+")
-            self.assertIn("lock[\"repository\"]", workflow)
-            self.assertIn("lock[\"commit\"]", workflow)
-            self.assertIn("ref: ${{ steps.core_lock.outputs.commit }}", workflow)
+            self.assertNotIn("secrets.", workflow)
+            if workflow_path == CATALOG.parent / "python" / "workflow.yml":
+                self.assertIn("lock[\"repository\"]", workflow)
+                self.assertIn("lock[\"commit\"]", workflow)
+                self.assertIn("ref: ${{ steps.core_lock.outputs.commit }}", workflow)
+            else:
+                self.assertIn("./materialize-core-tool .core/rps-tournament", workflow)
+                self.assertNotIn("repository: ${{", workflow)
             for action_ref in re.findall(r"uses:\s+[^\s]+@([^\s]+)", workflow):
                 self.assertRegex(action_ref, FULL_COMMIT)
 

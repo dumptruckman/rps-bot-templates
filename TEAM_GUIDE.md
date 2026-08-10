@@ -74,10 +74,12 @@ With a local Docker engine running, validate the current `team_source/` with:
 ```
 
 The command uses the repository's frozen Language Environment Catalog and the
-exact core-tool commit in `core-tool.lock.json`. By default, that core checkout
-must be at `../rps-tournament`; set `RPS_CORE_PATH` if it is elsewhere. The
-pinned base runtime for your Docker server's native `linux/amd64` or
-`linux/arm64` platform must already be present in that Docker context.
+exact core-tool commit in `core-tool.lock.json`. On first use it verifies the
+content-addressed `core-tool.bundle` and materializes that exact commit under
+`.core/rps-tournament`; it does not download packages or clone a private
+repository. A maintainer may set `RPS_CORE_PATH` to an equivalent exact clean
+checkout. The pinned base runtime for your Docker server's native `linux/amd64`
+or `linux/arm64` platform must already be present in that Docker context.
 
 The command validates and freezes Team Source, builds one confidence image for
 the Docker server's native platform, runs the participant-local conformance

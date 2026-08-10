@@ -325,7 +325,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--core-path",
         type=Path,
-        default=Path(os.environ.get("RPS_CORE_PATH", PROJECT_ROOT.parent / "rps-tournament")),
+        default=Path(
+            os.environ.get(
+                "RPS_CORE_PATH", PROJECT_ROOT / ".core" / "rps-tournament"
+            )
+        ),
     )
     return parser
 
