@@ -18,6 +18,7 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
 
         self.assertIn("branches: [\"team/**\"]", workflow)
         self.assertIn("ref: ${{ github.sha }}", workflow)
+        self.assertIn("fetch-depth: 0", workflow)
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn('runs-on: ubuntu-24.04', workflow)
         self.assertIn('PLATFORM: linux/amd64', workflow)
@@ -27,6 +28,25 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         self.assertNotIn("qemu", workflow.lower())
         self.assertNotIn("buildx", workflow.lower())
         self.assertNotIn("--push", workflow)
+
+    def test_branch_is_bound_to_one_verified_template_release(self) -> None:
+        workflow = self.workflow
+
+        self.assertIn('json.load(open("team-template.json"))["release_tag"]', workflow)
+        self.assertIn('git rev-parse "${release_tag}^{}"', workflow)
+        self.assertIn(
+            '.template-release/release-team-template verify "${release_tag}"',
+            workflow,
+        )
+        self.assertIn("':(exclude)team_source/**'", workflow)
+        self.assertIn('"template_release"', workflow)
+        for field in (
+            '"team_template_version"',
+            '"team_template_digest"',
+            '"advisory_validation_workflow"',
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, workflow)
 
     def test_pinned_core_owns_the_frozen_catalog_build_and_advisory_conformance(self) -> None:
         workflow = self.workflow
@@ -83,6 +103,7 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
 
         for field in (
             '"source_commit"',
+            '"template_release"',
             '"source_digest"',
             '"catalog"',
             '"core_tool"',
@@ -121,6 +142,8 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
             "superseded in-progress run",
             "latest completed green candidate",
             "score or winner",
+            "exact Template Release",
+            "starter digest",
             "insufficient for official Tournament entry",
         ):
             with self.subTest(statement=statement):

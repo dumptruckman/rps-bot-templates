@@ -1,8 +1,8 @@
 # Team guide
 
-Each Team works on one shared-repository branch created from the organizer's
-Tournament branch. The starter strategy already runs, so you can focus on
-changing how it chooses moves.
+Each Team works on one shared-repository branch created from the exact annotated
+Template Release selected by the organizer. The starter strategy already runs,
+so you can focus on changing how it chooses moves.
 
 ## Your editing boundary
 
@@ -11,10 +11,11 @@ changing how it chooses moves.
 file inside that directory. Do not edit or replace files elsewhere in this
 repository, even if Git permits it.
 
-The starter is the participant-facing Python Team Template. It claims
-compatibility with the exact Catalog Release in `core-tool.lock.json`; it is not
-a catalog-owned execution asset. After the organizer creates Team branches,
-each Team changes only its `team_source/` copy.
+The starter is the participant-facing Python Team Template. Its Template Release
+manifest records the exact starter digest and claims compatibility with the
+Catalog Release in `core-tool.lock.json`; it is not a catalog-owned execution
+asset. The organizer creates Team branches from the dereferenced Template
+Release tag, and each Team changes only its `team_source/` copy.
 
 The organizer controls everything outside `team_source/`. The authoritative
 versions of these execution assets are owned by `rps-tournament`, including:
@@ -25,10 +26,10 @@ versions of these execution assets are owned by `rps-tournament`, including:
 - Language Environment Catalog metadata such as `catalog.json`; and
 - readiness, runtime, conformance, and other Tournament integration files.
 
-Local copies retained during the catalog-consumer cutover are not a second
-authority. Organizer-owned paths are never part of Team Source and changes to
-them will not be accepted as part of a Submission Candidate. Third-party Python
-packages are not available; use Python's standard library.
+This repository does not contain copies of those assets. Organizer-owned paths
+are never part of Team Source and changes to them will not be accepted as part
+of a Submission Candidate. Third-party Python packages are not available; use
+Python's standard library.
 
 ## Strategy contract
 
@@ -94,7 +95,8 @@ determinism, isolation, resource, lifecycle, and Docker-host failures are
 reported separately.
 
 GitHub automatically checks every commit pushed to a `team/**` branch on native
-Linux/AMD64. The check materializes the bundled Runner, verifies the complete
+Linux/AMD64. The check identifies the branch's exact Template Release, verifies
+its annotated manifest, materializes the bundled Runner, verifies the complete
 locked Catalog Release, and uses only its catalog while checking the exact
 source commit. It builds one disposable `linux/amd64` confidence image and never
 publishes that image. A practice Match proves protocol compatibility, but its
@@ -103,9 +105,11 @@ Candidate passes.
 
 The Actions run summary shows the result. Its `team-advisory-<commit>` artifact
 retains commit-specific eligibility evidence and the conformance report for 90
-days, including the Source Digest and every frozen validation identity. A newer
-push cancels a superseded in-progress run on the same Team branch without
-removing the latest completed green candidate or its evidence.
+days, including the Template Release tag and commit, supported Team Template
+version and starter digest, Advisory Validation workflow identity, Source
+Digest, and every frozen Catalog Release validation identity. A newer push
+cancels a superseded in-progress run on the same Team branch without removing
+the latest completed green candidate or its evidence.
 
 Participant-local validation is Advisory Validation only. It is insufficient
 for official Tournament entry and cannot produce an official Bot Artifact. If
@@ -122,10 +126,16 @@ accept a Bot Artifact.
 
 ## Shared branch policy
 
-Use the branch name `team/<team-slug>`, where `<team-slug>` is the lowercase
-name assigned by the organizer using letters, digits, and hyphens. There is one
-branch per Team. Commit and push only changes under `team_source/`; Teams follow
-this boundary as an honor policy in the shared repository.
+Use the branch name `team/<team-slug>`, where the slug is the lowercase Team name
+assigned by the organizer using letters, digits, and hyphens. The organizer
+creates it from the selected Template Release, substituting its exact tag:
+
+```sh
+git switch --create team/<team-slug> template-v1^{}
+```
+
+There is one branch per Team. Commit and push only changes under `team_source/`;
+Teams follow this boundary as an honor policy in the shared repository.
 
 Team branches and their histories are visible to people who can read the
 repository. This workflow does not provide submission secrecy. Do not inspect,

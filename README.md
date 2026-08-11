@@ -14,7 +14,8 @@ exact Catalog Release; it does not redefine those assets.
 
 ## Team branches
 
-A fresh Team branch starts from the Python Team Template. Its working strategy is
+A fresh Team branch starts from one exact annotated Template Release of the
+Python Team Template. Its working strategy is
 [`team_source/strategy.py`](team_source/strategy.py). Teams must change only
 Team Source under `team_source/`; the catalog and its build, wrapper, workflow,
 and protocol assets remain organizer-owned. See the [Team guide](TEAM_GUIDE.md)
@@ -42,18 +43,19 @@ Submission Candidate on the organizer's native ARM64 machine, runs canonical
 Final Validation, and retains a contract comparison against its GitHub Advisory
 Validation evidence without conflating the two platform-specific images.
 
-The [legacy catalog release runbook](CATALOG_RELEASE.md) documents the
-pre-cutover release procedure while its duplicate assets remain in this
-repository. New Catalog Releases belong to `rps-tournament`.
+The [Template Release runbook](TEMPLATE_RELEASE.md) defines how maintainers
+publish the participant-facing starter, pin one Runner-owned Catalog Release,
+and create Team branches from the exact annotated release tag. Catalog Releases
+remain exclusively owned by `rps-tournament`.
 
 ## Immutable compatibility contract
 
-[`core-tool.lock.json`](core-tool.lock.json) is the compatibility claim for this
-Team Template. It identifies exactly one published Runner Catalog Release by a
-full Runner commit, exact package version, repository-relative catalog path,
-catalog content identity, complete catalog asset identity map, and offline
-bundle identity. It contains no branch, abbreviated commit, version tag, or
-`latest` fallback.
+[`core-tool.lock.json`](core-tool.lock.json) is the compatibility claim copied
+into this Team Template's release manifest. It identifies exactly one published
+Runner Catalog Release by a full Runner commit, exact package version,
+repository-relative catalog path, catalog content identity, complete catalog
+asset identity map, and offline bundle identity. It contains no branch,
+abbreviated commit, version tag, or `latest` fallback.
 
 `core-tool.bundle` materializes the exact Runner commit without network access.
 Before validation begins, the materializer equality-checks the bundle identity,
@@ -66,16 +68,17 @@ boundary and lock-update rules.
 The ownership boundary is deliberate:
 
 - This repository owns the Team Template under `team_source/`, Team instructions,
-  Advisory Validation entrypoints, and future Template Releases.
+  Advisory Validation entrypoints, and Template Releases.
 - `rps-tournament` owns every Language Environment and Catalog Release, including
   all organizer-controlled execution assets.
 - Teams edit only `team_source/`. Organizer-owned paths are never Team Source,
-  even when a transition copy is present here.
+  and no catalog source tree is maintained in this repository.
 
-The current `language_environments/` tree is a temporary, non-authoritative
-mirror retained only during the staged catalog-consumer cutover. Its presence
-does not create a second catalog authority. No active validation path reads it;
-it will be removed in the contraction step of the cutover.
+[`team-template.json`](team-template.json) names the supported Team Template
+version, participant-facing source path, Advisory Validation workflow, and
+release tag. The annotated tag manifest binds those values to the exact
+Template commit, Team Template digest, workflow identity, and complete catalog
+compatibility claim.
 
 ## Verify a compatibility-lock change
 

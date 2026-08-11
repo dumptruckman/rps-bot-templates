@@ -15,12 +15,12 @@ under [`SUBMISSION_CUTOFF.md`](SUBMISSION_CUTOFF.md). Preserve its
 exact selected Team Source as that runbook directs; do not bring the GitHub
 image into the organizer Docker context.
 
-On the organizer's native ARM64 machine, check out this repository release and
-run `./materialize-core-tool` unless its locked Runner checkout is already
-present. The proof verifies the bundle and full Catalog Release coordinates
-again before using the catalog in that checkout. The active Docker server must
-report `linux/arm64`, and the catalog's pinned ARM64 runtime must already be
-present.
+On the organizer's native ARM64 machine, check out and verify the exact annotated
+Template Release named by the Team's eligibility evidence. Run
+`./materialize-core-tool` unless its locked Runner checkout is already present.
+The proof verifies the bundle and full Catalog Release coordinates again before
+using the catalog in that checkout. The active Docker server must report
+`linux/arm64`, and the catalog's pinned ARM64 runtime must already be present.
 Run, using the selected full Git commit and new output path:
 
 ```sh

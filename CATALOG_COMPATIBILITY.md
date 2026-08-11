@@ -28,8 +28,14 @@ clean checkout, installed-package metadata, canonical catalog content, and each
 referenced asset. Its failures identify the mismatched coordinate and direct the
 organizer to restore the locked release inputs. `validate-team`, GitHub Advisory
 Validation, wrapper smoke tests, and the native cross-platform proof consume
-only the catalog inside that materialized checkout; the transitional local copy
-is not a fallback.
+only the catalog inside that materialized checkout. This repository contains no
+catalog source tree or fallback.
+
+`release-team-template` copies the complete lock object into each annotated
+Template Release manifest alongside the exact Template repository commit, Team
+Template digest, and Advisory Validation workflow identity. Release creation
+and verification rematerialize and equality-check the claim; a partially edited
+or mismatched lock cannot publish a Template Release.
 
 The dependency is one-way. This repository may materialize the locked Runner
 offline to provide Advisory Validation, but the Runner never consumes a Team

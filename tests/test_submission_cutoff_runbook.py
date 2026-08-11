@@ -21,6 +21,7 @@ class SubmissionCutoffRunbookTests(unittest.TestCase):
             "explicitly select an earlier",
             "Coordinated Universal Time (UTC)",
             "source commit",
+            "Template Release",
         ):
             with self.subTest(statement=statement):
                 self.assertIn(statement, self.normalized)
@@ -54,9 +55,12 @@ class SubmissionCutoffRunbookTests(unittest.TestCase):
             "source_digest",
             "versions.catalog",
             "catalog",
+            "template_release",
+            "Team Template version and digest",
+            "Advisory Validation workflow identity",
         ):
             with self.subTest(identity=identity):
-                self.assertIn(identity, self.runbook)
+                self.assertIn(identity, self.normalized)
         self.assertIn("must match", self.normalized)
 
     def test_no_github_delivery_uses_the_same_source_validator(self) -> None:

@@ -1,0 +1,298 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import subprocess
+import sys
+from typing import Any, Dict, Mapping, Tuple
+
+from catalog_compatibility import (
+    CompatibilityError,
+    read_lock,
+    verify_bundle,
+    verify_checkout,
+)
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+DESCRIPTOR_PATH = PROJECT_ROOT / "team-template.json"
+CORE_LOCK_PATH = PROJECT_ROOT / "core-tool.lock.json"
+CORE_BUNDLE_PATH = PROJECT_ROOT / "core-tool.bundle"
+TAG_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+FULL_ACTION_REF = re.compile(r"^[0-9a-f]{40}$")
+FULL_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+
+class ReleaseError(RuntimeError):
+    """The Team Template cannot be published or verified."""
+
+
+def _run(*arguments: str, cwd: Path = PROJECT_ROOT) -> str:
+    completed = subprocess.run(
+        list(arguments), cwd=cwd, capture_output=True, text=True
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        raise ReleaseError("command failed: " + " ".join(arguments) + ": " + detail)
+    return completed.stdout.strip()
+
+
+def _read_object(path: Path, label: str) -> Dict[str, Any]:
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ReleaseError(label + " is unreadable: " + str(error)) from error
+    if not isinstance(value, dict):
+        raise ReleaseError(label + " must contain a JSON object")
+    return value
+
+
+def _relative_path(value: object, label: str) -> PurePosixPath:
+    if not isinstance(value, str) or not value:
+        raise ReleaseError(label + " must be a non-empty path")
+    path = PurePosixPath(value)
+    if (
+        path.is_absolute()
+        or not path.parts
+        or any(part in ("", ".", "..") for part in path.parts)
+        or "\\" in value
+    ):
+        raise ReleaseError(label + " must be a safe repository-relative POSIX path")
+    return path
+
+
+def _descriptor(tag: str) -> Dict[str, str]:
+    raw = _read_object(DESCRIPTOR_PATH, "Team Template descriptor")
+    expected_fields = {
+        "format_version",
+        "version",
+        "path",
+        "release_tag",
+        "advisory_validation_workflow",
+    }
+    if set(raw) != expected_fields:
+        raise ReleaseError("Team Template descriptor fields mismatch")
+    if raw.get("format_version") != "rps-team-template-v1":
+        raise ReleaseError("Team Template descriptor format is unsupported")
+    for field in expected_fields - {"format_version"}:
+        if not isinstance(raw.get(field), str) or not raw[field]:
+            raise ReleaseError("Team Template descriptor " + field + " is invalid")
+    if raw["release_tag"] != tag:
+        raise ReleaseError(
+            "release tag " + repr(tag) + " does not match team-template.json"
+        )
+    _relative_path(raw["path"], "Team Template path")
+    _relative_path(
+        raw["advisory_validation_workflow"], "Advisory Validation workflow path"
+    )
+    return {key: str(value) for key, value in raw.items()}
+
+
+def _core_path() -> Path:
+    configured = os.environ.get("RPS_CORE_PATH")
+    if configured:
+        return Path(configured).resolve()
+    core_path = PROJECT_ROOT / ".core" / "rps-tournament"
+    if not core_path.exists():
+        _run(str(PROJECT_ROOT / "materialize-core-tool"), str(core_path))
+    return core_path
+
+
+def _catalog_compatibility() -> Mapping[str, Any]:
+    try:
+        lock = read_lock(CORE_LOCK_PATH)
+        verify_bundle(CORE_BUNDLE_PATH, lock)
+        verify_checkout(_core_path(), lock)
+    except (CompatibilityError, OSError, KeyError, TypeError) as error:
+        raise ReleaseError("catalog compatibility claim mismatch: " + str(error)) from error
+    return lock
+
+
+def _verify_immutable_action_references() -> None:
+    workflow_directory = PROJECT_ROOT / ".github" / "workflows"
+    paths = sorted(workflow_directory.glob("*.yml"))
+    paths.extend(sorted(workflow_directory.glob("*.yaml")))
+    for path in paths:
+        try:
+            workflow = path.read_text()
+        except (OSError, UnicodeDecodeError) as error:
+            raise ReleaseError("workflow is unreadable: " + str(error)) from error
+        references = re.findall(
+            r"^\s*-?\s*uses:\s*([^\s#]+)", workflow, re.MULTILINE
+        )
+        for reference in references:
+            if reference.startswith("./"):
+                continue
+            if "@" not in reference:
+                action_ref = ""
+            else:
+                action_ref = reference.rsplit("@", 1)[1]
+            if not FULL_ACTION_REF.fullmatch(action_ref):
+                relative = path.relative_to(PROJECT_ROOT)
+                raise ReleaseError(
+                    str(relative) + " uses mutable action ref " + repr(action_ref)
+                )
+
+
+def _file_digest(path: Path, label: str) -> str:
+    if path.is_symlink() or not path.is_file():
+        raise ReleaseError(label + " must be a repository-owned regular file")
+    try:
+        return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError as error:
+        raise ReleaseError(label + " is unreadable: " + str(error)) from error
+
+
+def _team_template(descriptor: Mapping[str, str]) -> Dict[str, Any]:
+    relative_root = _relative_path(descriptor["path"], "Team Template path")
+    root = PROJECT_ROOT.joinpath(*relative_root.parts)
+    if root.is_symlink() or not root.is_dir():
+        raise ReleaseError("Team Template path must name a repository-owned directory")
+    files: Dict[str, str] = {}
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise ReleaseError("Team Template must not contain symbolic links")
+        if path.is_dir():
+            continue
+        if not path.is_file():
+            raise ReleaseError("Team Template must contain only regular files")
+        files[path.relative_to(root).as_posix()] = _file_digest(
+            path, "Team Template file"
+        )
+    if not files:
+        raise ReleaseError("Team Template must contain at least one file")
+    canonical = json.dumps(files, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
+    digest = "sha256:" + hashlib.sha256(canonical).hexdigest()
+    if not FULL_DIGEST.fullmatch(digest):
+        raise ReleaseError("Team Template digest is invalid")
+    return {
+        "version": descriptor["version"],
+        "path": relative_root.as_posix(),
+        "digest": digest,
+        "files": files,
+    }
+
+
+def build_manifest(tag: str) -> Dict[str, Any]:
+    if not TAG_NAME.fullmatch(tag):
+        raise ReleaseError(
+            "release tag must use only letters, digits, dots, underscores, and hyphens"
+        )
+    descriptor = _descriptor(tag)
+    compatibility = _catalog_compatibility()
+    _verify_immutable_action_references()
+    workflow_relative = _relative_path(
+        descriptor["advisory_validation_workflow"],
+        "Advisory Validation workflow path",
+    )
+    workflow_path = PROJECT_ROOT.joinpath(*workflow_relative.parts)
+    workflow_digest = _file_digest(
+        workflow_path, "Advisory Validation workflow"
+    )
+    return {
+        "release_format_version": "template-release-v1",
+        "template_repository": {
+            "commit": _run("git", "rev-parse", "HEAD"),
+            "tag": tag,
+        },
+        "team_template": _team_template(descriptor),
+        "catalog_compatibility": compatibility,
+        "advisory_validation": {
+            "workflow_path": workflow_relative.as_posix(),
+            "workflow_identity": "team-advisory-validation-v1@" + workflow_digest,
+            "supported_template_version": descriptor["version"],
+        },
+    }
+
+
+def _require_clean_repository() -> None:
+    if _run("git", "status", "--porcelain"):
+        raise ReleaseError("repository must be clean before creating or verifying a release")
+
+
+def _create_release(tag: str) -> Dict[str, Any]:
+    _require_clean_repository()
+    try:
+        _run("git", "rev-parse", "--verify", "refs/tags/" + tag)
+    except ReleaseError:
+        pass
+    else:
+        raise ReleaseError("release tag " + repr(tag) + " already exists")
+    manifest = build_manifest(tag)
+    annotation = json.dumps(manifest, indent=2, sort_keys=True)
+    _run("git", "tag", "--no-sign", "--annotate", tag, "--message", annotation)
+    return manifest
+
+
+def _read_tag_manifest(tag: str) -> Tuple[str, Dict[str, Any]]:
+    if not TAG_NAME.fullmatch(tag):
+        raise ReleaseError("invalid release tag")
+    object_type = _run("git", "cat-file", "-t", "refs/tags/" + tag)
+    if object_type != "tag":
+        raise ReleaseError("release tag " + repr(tag) + " must be an annotated tag")
+    raw = _run("git", "cat-file", "tag", "refs/tags/" + tag)
+    headers, separator, annotation = raw.partition("\n\n")
+    if not separator:
+        raise ReleaseError("release tag " + repr(tag) + " has no annotation")
+    target = ""
+    for line in headers.splitlines():
+        if line.startswith("object "):
+            target = line[len("object ") :]
+            break
+    try:
+        manifest = json.loads(annotation)
+    except json.JSONDecodeError as error:
+        raise ReleaseError(
+            "release tag " + repr(tag) + " does not contain a JSON manifest"
+        ) from error
+    if not isinstance(manifest, dict):
+        raise ReleaseError("release tag manifest must be a JSON object")
+    return target, manifest
+
+
+def _verify_release(tag: str) -> Dict[str, Any]:
+    _require_clean_repository()
+    target, recorded = _read_tag_manifest(tag)
+    head = _run("git", "rev-parse", "HEAD")
+    if target != head:
+        raise ReleaseError(
+            "release tag " + repr(tag) + " targets the wrong Template repository commit"
+        )
+    expected = build_manifest(tag)
+    if recorded.get("team_template") != expected["team_template"]:
+        raise ReleaseError("Team Template changed since the release was created")
+    if recorded != expected:
+        raise ReleaseError("release manifest does not match the Template repository contents")
+    return recorded
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Create or verify an immutable Template Release"
+    )
+    parser.add_argument("command", choices=("manifest", "create", "verify"))
+    parser.add_argument("tag")
+    arguments = parser.parse_args()
+    try:
+        if arguments.command == "manifest":
+            manifest = build_manifest(arguments.tag)
+        elif arguments.command == "create":
+            manifest = _create_release(arguments.tag)
+        else:
+            manifest = _verify_release(arguments.tag)
+    except ReleaseError as error:
+        print("Template Release failure: " + str(error), file=sys.stderr)
+        return 1
+    print(json.dumps(manifest, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

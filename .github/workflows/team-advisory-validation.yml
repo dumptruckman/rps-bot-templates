@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - name: Materialize bundled pinned Tournament core
         id: core_lock
@@ -35,10 +36,29 @@ jobs:
               lock = json.load(stream)
           print("commit=" + lock["runner"]["commit"])
           PY
+      - name: Verify the exact Template Release
+        id: template_release
+        continue-on-error: true
+        env:
+          RPS_CORE_PATH: ${{ github.workspace }}/.core/rps-tournament
+        run: |
+          mkdir -p .advisory
+          release_tag="$(python3 -c 'import json; print(json.load(open("team-template.json"))["release_tag"])')"
+          release_commit="$(git rev-parse "${release_tag}^{}")"
+          git worktree add --detach .template-release "${release_commit}"
+          .template-release/release-team-template verify "${release_tag}" \
+            > .advisory/template-release.json
+          git diff --quiet "${release_commit}" "${GITHUB_SHA}" \
+            -- . ':(exclude)team_source/**' || {
+              echo "Team branch changed files outside the released Team Source boundary" >&2
+              exit 1
+            }
       - name: Verify native Linux/AMD64 Docker
+        if: steps.template_release.outcome == 'success'
         run: |
           test "$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')" = "$PLATFORM"
       - name: Cache the pinned Linux/AMD64 base runtime
+        if: steps.template_release.outcome == 'success'
         run: |
           runtime_reference="$(python3 - <<'PY'
           import json
@@ -54,10 +74,9 @@ jobs:
           PY
           )"
           docker pull --platform "$PLATFORM" "$runtime_reference"
-      - name: Create evidence workspace
-        run: mkdir -p .advisory
       - name: Freeze Team Source
         id: source
+        if: steps.template_release.outcome == 'success'
         continue-on-error: true
         run: |
           python3 -m rps_runner.source_cli \
@@ -93,6 +112,7 @@ jobs:
         env:
           SOURCE_COMMIT: ${{ github.sha }}
           CORE_COMMIT: ${{ steps.core_lock.outputs.commit }}
+          TEMPLATE_RELEASE_OUTCOME: ${{ steps.template_release.outcome }}
           SOURCE_OUTCOME: ${{ steps.source.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
           ADVISORY_VALIDATION_OUTCOME: ${{ steps.advisory_validation.outcome }}
@@ -129,6 +149,9 @@ jobs:
           )
           report_path = root / "advisory-validation" / "validation-report.json"
           report = read_json_object_or_empty(report_path)
+          template_release = read_json_object_or_empty(
+              root / "template-release.json"
+          )
           unavailable = "not-produced"
           fallback_validation_identities = {
               "catalog": "unavailable",
@@ -168,6 +191,9 @@ jobs:
           except (ImportError, KeyError, OSError, TypeError, ValueError):
               pass
           outcomes = {
+              "template_release": os.environ.get(
+                  "TEMPLATE_RELEASE_OUTCOME", "unknown"
+              ),
               "source": os.environ.get("SOURCE_OUTCOME", "unknown"),
               "build": os.environ.get("BUILD_OUTCOME", "unknown"),
               "advisory_validation": os.environ.get(
@@ -184,6 +210,25 @@ jobs:
               "evidence_format_version": "team-advisory-evidence-v1",
               "result": "passed" if passed else "failed",
               "authority": "github-advisory",
+              "template_release": {
+                  "tag": get_nested_value(
+                      template_release, "template_repository", "tag"
+                  ) or unavailable,
+                  "commit": get_nested_value(
+                      template_release, "template_repository", "commit"
+                  ) or unavailable,
+                  "team_template_version": get_nested_value(
+                      template_release, "team_template", "version"
+                  ) or unavailable,
+                  "team_template_digest": get_nested_value(
+                      template_release, "team_template", "digest"
+                  ) or unavailable,
+                  "advisory_validation_workflow": get_nested_value(
+                      template_release,
+                      "advisory_validation",
+                      "workflow_identity",
+                  ) or unavailable,
+              },
               "source_commit": os.environ.get("SOURCE_COMMIT"),
               "source_digest": source.get("source_digest") or unavailable,
               "catalog": get_nested_value(report, "identities", "catalog")
@@ -221,12 +266,22 @@ jobs:
           )
           if report_path.is_file():
               shutil.copyfile(report_path, destination / "validation-report.json")
+          template_release_path = root / "template-release.json"
+          if template_release_path.is_file():
+              shutil.copyfile(
+                  template_release_path, destination / "template-release.json"
+              )
 
           lines = [
               "## GitHub Advisory Validation",
               "",
               "- Result: **" + evidence["result"] + "**",
               "- Source commit: `" + str(evidence["source_commit"]) + "`",
+              "- Template Release: `"
+                  + str(evidence["template_release"]["tag"])
+                  + "@"
+                  + str(evidence["template_release"]["commit"])
+                  + "`",
               "- Source Digest: `" + str(evidence["source_digest"]) + "`",
               "- Platform: `" + evidence["platform"] + "`",
               "- Authority: Advisory Validation only; insufficient for official Tournament entry.",

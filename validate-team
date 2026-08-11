@@ -147,9 +147,16 @@ def make_writable(root: Path) -> None:
 def main() -> int:
     try:
         lock = read_object(ROOT / "core-tool.lock.json")
+        template = read_object(ROOT / "team-template.json")
         locked_commit = lock["runner"]["commit"]
+        template_release = template["release_tag"]
+        template_version = template["version"]
         if not isinstance(locked_commit, str):
             raise ValueError("core lock commit is not a string")
+        if not isinstance(template_release, str) or not template_release:
+            raise ValueError("Template Release tag is not a string")
+        if not isinstance(template_version, str) or not template_version:
+            raise ValueError("Team Template version is not a string")
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
         return fail("Pinned core tool", str(error))
 
@@ -262,6 +269,8 @@ def main() -> int:
             raise ValueError("core report did not record passed Advisory Validation")
 
         print("Participant-local Advisory Validation passed")
+        print("Template Release: " + template_release)
+        print("Supported Team Template: " + template_version)
         print("Team Source digest: " + identity(identities, "source"))
         print("Catalog: " + identity(identities, "catalog"))
         print("Core tool: " + identity(identities, "core_tool") + " (commit " + locked_commit + ")")

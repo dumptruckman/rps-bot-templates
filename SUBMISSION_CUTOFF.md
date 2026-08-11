@@ -22,7 +22,8 @@ the default.
 
 For every Team, preserve an immutable selection record containing:
 
-- the declared deadline, Team identity, and assigned branch;
+- the declared deadline, Team identity, assigned branch, exact Template Release
+  tag, and Template repository commit;
 - the selected source commit and whether it was the default or an explicitly
   chosen earlier commit;
 - the GitHub run ID, URL, completion time, conclusion, and downloaded
@@ -40,7 +41,10 @@ runner.
 Download the evidence artifact from the selected run through the organizer's
 normal authenticated GitHub session. Confirm before transport that
 `eligibility-evidence.json` has `result` equal to `passed`, `authority` equal to
-`github-advisory`, and `source_commit` equal to the selected full SHA.
+`github-advisory`, and `source_commit` equal to the selected full SHA. Its
+`template_release` tag, commit, Team Template version and digest, and Advisory
+Validation workflow identity must equal the selected annotated Template Release
+manifest. Preserve that manifest with the selection record.
 
 Use a new working directory and substitute the actual repository URL, Team
 branch, and selected SHA. These are deliberate, manual organizer actions:
@@ -60,9 +64,9 @@ git -C selected-team archive --format=tar \
 
 The reported `HEAD` must equal the selection record's `source_commit`. Export
 only `team_source/`; do not use a catalog, wrapper, workflow, recipe, or core
-lock taken from a Team branch. The organizer-controlled Tournament release
+lock taken from a Team branch. The organizer's verified Template Release
 checkout supplies `core-tool.lock.json`; the exact materialized Runner checkout
-named by that lock is the authority for the frozen Catalog Release.
+named by that lock is the authority for the pinned Catalog Release.
 
 Check out the exact core commit named by that lock and make it importable as the
 pinned core's documentation directs. Then pass the exported local directory to
@@ -70,7 +74,7 @@ the core tool's existing boundary:
 
 ```sh
 PYTHONPATH=<pinned-core-checkout> python3 -m rps_runner.source_cli \
-  --catalog <organizer-release>/language_environments/catalog-v1/catalog.json \
+  --catalog <pinned-core-checkout>/language_environments/catalog-v1/catalog.json \
   --environment python \
   --source source-export/team-source \
   --bundle validated-source-bundle
@@ -102,7 +106,7 @@ before extracting it into a new isolated directory. Locate the directory whose
 contents correspond to `team_source/`; do not accept organizer-owned catalog,
 wrapper, recipe, workflow, or dependency files as Team Source. Pass that local
 directory to the same pinned source validator command shown above, using the
-organizer-controlled frozen catalog.
+Catalog Release pinned by the verified Template Release.
 
 The resulting source bundle establishes the delivered Source Digest and frozen
 catalog identity. Record `source_digest` and `versions.catalog` in place of the
@@ -116,8 +120,9 @@ GitHub/AMD64 evidence is Advisory Validation only. It identifies a Submission
 Candidate and provides compatibility confidence, but it cannot create or
 authorize a Tournament-eligible Bot Artifact. The selected, source-validated
 Team Source must be rebuilt on native Linux/ARM64 by the organizer against the
-frozen catalog. Only a passing organizer Final Validation of that rebuilt ARM64
-image can create a Tournament-eligible Bot Artifact.
+pinned Catalog Release named by the Template Release. Only a passing organizer
+Final Validation of that rebuilt ARM64 image can create a Tournament-eligible
+Bot Artifact.
 
 Never import the disposable GitHub image into the official roster, and never
 substitute a GitHub run, participant-local result, AMD64 build, multi-platform

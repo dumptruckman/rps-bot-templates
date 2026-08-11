@@ -158,8 +158,19 @@ class CatalogConsumerContractTests(unittest.TestCase):
             self.assertNotEqual(completed.returncode, 0)
             self.assertIn("not a clean checkout", completed.stderr)
 
-    def test_active_validation_paths_do_not_read_the_transitional_catalog(self) -> None:
-        local_catalog = 'ROOT / "language_environments"'
+    def test_repository_has_no_second_catalog_source_tree(self) -> None:
+        self.assertFalse((PROJECT_ROOT / "language_environments").exists())
+        for obsolete in (
+            "freeze-tournament-catalog",
+            "CATALOG_RELEASE.md",
+            ".github/workflows/catalog-contract.yml",
+            "tests/test_catalog_release.py",
+            "tests/test_core_contract.py",
+        ):
+            with self.subTest(obsolete=obsolete):
+                self.assertFalse((PROJECT_ROOT / obsolete).exists())
+
+    def test_active_validation_paths_use_only_the_materialized_catalog(self) -> None:
         active_commands = (
             PROJECT_ROOT / "validate-team",
             PROJECT_ROOT / "prove-amd64-against-arm64",
@@ -168,7 +179,6 @@ class CatalogConsumerContractTests(unittest.TestCase):
         for path in active_commands:
             with self.subTest(path=path.name):
                 source = path.read_text()
-                self.assertNotIn(local_catalog, source)
                 self.assertIn('["catalog"]["path"]', source)
                 self.assertIn("materialize-core-tool", source)
 

@@ -1,0 +1,7 @@
+{
+  "format_version": "rps-team-template-v1",
+  "version": "python-team-template-v1",
+  "path": "team_source",
+  "release_tag": "template-v1",
+  "advisory_validation_workflow": ".github/workflows/team-advisory-validation.yml"
+}

@@ -1,4 +1,0 @@
-{
-  "argv": ["python3", "-I", "/opt/rps/wrapper.py"],
-  "version": "python-entrypoint-v1"
-}
