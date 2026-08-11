@@ -43,6 +43,7 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         for field in (
             '"team_template_version"',
             '"team_template_digest"',
+            '"starter_source_digest"',
             '"advisory_validation_workflow"',
         ):
             with self.subTest(field=field):

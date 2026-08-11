@@ -139,6 +139,14 @@ class TemplateReleaseTests(unittest.TestCase):
         template = manifest["team_template"]
         self.assertEqual(template["version"], descriptor["version"])
         self.assertEqual(template["path"], "team_source")
+        self.assertEqual(
+            template["expected_source_digest"],
+            descriptor["expected_source_digest"],
+        )
+        self.assertEqual(
+            template["expected_source_digest"],
+            "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a",
+        )
         self.assertRegex(template["digest"], r"^sha256:[0-9a-f]{64}$")
         self.assertEqual(
             template["files"],

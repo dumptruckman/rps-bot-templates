@@ -3,8 +3,9 @@
 A Template Release is the immutable participant-facing starting point for Team
 coding. Its JSON manifest is the annotation on an annotated Git tag. The
 manifest records the exact Template repository commit, Team Template digest,
-complete `core-tool.lock.json` Catalog Release compatibility claim, Advisory
-Validation workflow identity, and supported Team Template version.
+expected starter Source Digest, complete `core-tool.lock.json` Catalog Release
+compatibility claim, Advisory Validation workflow identity, and supported Team
+Template version.
 
 The release contains no Language Environment Catalog source. The catalog,
 wrapper, runtimes, recipe, readiness contract, entrypoint, and conformance
@@ -26,10 +27,10 @@ git status --short
 
 Creation verifies the content-addressed Runner bundle, exact clean Runner
 commit, package version, catalog path and identity, complete catalog asset map,
-Team Template contents, supported version, and immutable workflow action
-references. It refuses a dirty Template checkout, mismatched catalog lock,
-changed Team Template, mutable action reference, reused tag, or tag name that
-does not match `team-template.json`.
+Team Template contents and Source Digest, supported version, and immutable
+workflow action references. It refuses a dirty Template checkout, mismatched
+catalog lock, changed Team Template, mutable action reference, reused tag, or
+tag name that does not match `team-template.json`.
 
 Push the exact Template commit and annotated tag together. Do not move, delete,
 or recreate a published tag; its annotation is the Template Release manifest.
@@ -79,3 +80,10 @@ supported template version, a new release tag, and a new manifest. Release notes
 must identify the superseded release and explain the replacement. Existing Team
 branches remain on their original Template Release unless the organizer
 explicitly restarts or migrates them before the declared cutoff.
+
+After publication, use the
+[cross-repository cutover proof](CROSS_REPOSITORY_CUTOVER.md) to retain a clean-
+clone and offline reproduction of the released starter, native platform
+evidence, and organizer workflow. The expected starter Source Digest is checked
+through the materialized Runner catalog during both release creation and
+verification; it is not derived from a catalog copy in this repository.

@@ -1,12 +1,12 @@
 {
   "format_version": "rps-catalog-compatibility-v1",
   "runner": {
-    "commit": "ba9242ed46023a237f76e82d1296e8af706fd48c",
+    "commit": "e032114ac567fa6a454796862df3fed855b29058",
     "package_version": "0.1.0"
   },
   "catalog": {
     "path": "language_environments/catalog-v1/catalog.json",
-    "identity": "rps-language-environment-catalog-v1@sha256:b4592ef03f1645eac2a8918cbbddc44a90c697b63fce4c4026b9cbbd17ef7f49",
+    "identity": "rps-language-environment-catalog-v1@sha256:8724e24a870b6004a01bca95d23059c94cb9abe2c73e15018db2ad0d0a02c181",
     "assets": {
       "contract-fixture.base_runtime": "contract-runtime-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
       "contract-fixture.build_target": "contract-build-target-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
@@ -26,11 +26,11 @@
       "python.platform": "oci-platforms-v1@sha256:e5a635c659f52ff7433c1ab4f8d086a8b66689a84fe522e85b72b29801005b03",
       "python.readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
       "python.recipe": "python-build-recipe-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
-      "python.workflow": "source-validation-workflow-v1@sha256:48cb1e0053b4b370882ffb65ba56f587add00c79c6e685e4f1159ed2039bddef",
+      "python.workflow": "source-validation-workflow-v1@sha256:a66d958d1eaf7ed7b36ecc3aa0192dd28a67a172ef810d42575a8c73b14ce6f4",
       "python.wrapper": "python-wrapper-v2@sha256:a82ae2481ad47d0697f318ccf09c5e8bd9597efbbca12f31366fc61d811baed7"
     }
   },
   "offline_bundle": {
-    "identity": "rps-runner-offline-bundle-v1@sha256:accf69c77e12920275b2a023b278c24cf4ab6f9df438d4e7aaf4db17f49890bd"
+    "identity": "rps-runner-offline-bundle-v1@sha256:2ab31b58e5322f920e9b1b70ffc3ad7fdafd31f9adb7550410ea6049a4d8297b"
   }
 }

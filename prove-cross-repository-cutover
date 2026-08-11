@@ -1,0 +1,782 @@
+#!/usr/bin/env python3
+"""Retain the clean-clone, offline, Advisory-to-Final catalog cutover proof."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+from typing import Any, Mapping, Sequence
+
+from catalog_compatibility import read_lock, verify_independence_evidence
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+CORE_LOCK = PROJECT_ROOT / "core-tool.lock.json"
+DESCRIPTOR = PROJECT_ROOT / "team-template.json"
+AMD64 = "linux/amd64"
+ARM64 = "linux/arm64"
+SHA256_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
+VALIDATION_IDENTITY = re.compile(
+    r"^validation-report-v1@sha256:[0-9a-f]{64}$"
+)
+
+
+def _mapping(value: object, label: str) -> Mapping[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError(label + " must be a JSON object")
+    return value
+
+
+def _items(value: object, label: str) -> list[Mapping[str, Any]]:
+    if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+        raise ValueError(label + " must be an array of JSON objects")
+    return value
+
+
+def _expect(actual: object, expected: object, label: str) -> None:
+    if actual != expected:
+        raise ValueError(
+            label + " mismatch: expected " + repr(expected) + ", got " + repr(actual)
+        )
+
+
+def _string(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(label + " must be a non-empty string")
+    return value
+
+
+def _identity(value: object, pattern: re.Pattern[str], label: str) -> str:
+    if not isinstance(value, str) or pattern.fullmatch(value) is None:
+        raise ValueError(label + " is not a valid immutable identity")
+    return value
+
+
+def _read_object(path: Path, label: str) -> Mapping[str, Any]:
+    try:
+        return _mapping(json.loads(path.read_text()), label)
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(label + " is unreadable: " + str(error)) from error
+
+
+def _release_authority(
+    template_release: Mapping[str, Any], runner_evidence: Mapping[str, Any]
+) -> tuple[Mapping[str, Any], str, str]:
+    _expect(
+        template_release.get("release_format_version"),
+        "template-release-v1",
+        "Template Release format",
+    )
+    compatibility = _mapping(
+        template_release.get("catalog_compatibility"),
+        "Template Release catalog compatibility",
+    )
+    catalog = _mapping(compatibility.get("catalog"), "catalog compatibility")
+    runner = _mapping(compatibility.get("runner"), "Runner compatibility")
+
+    verify_independence_evidence(runner_evidence, compatibility)
+    return compatibility, str(catalog["identity"]), str(runner["commit"])
+
+
+def _validate_template_advisory_identity(
+    template_release: Mapping[str, Any], eligibility: Mapping[str, Any]
+) -> None:
+    repository = _mapping(
+        template_release.get("template_repository"), "Template repository identity"
+    )
+    template = _mapping(
+        template_release.get("team_template"), "Team Template identity"
+    )
+    advisory = _mapping(
+        template_release.get("advisory_validation"), "Advisory Validation identity"
+    )
+    retained = _mapping(
+        eligibility.get("template_release"), "retained Template Release identity"
+    )
+    comparisons = (
+        (retained.get("tag"), repository.get("tag"), "Template Release tag"),
+        (
+            retained.get("commit"),
+            repository.get("commit"),
+            "Template Release commit",
+        ),
+        (
+            retained.get("team_template_version"),
+            template.get("version"),
+            "Team Template version",
+        ),
+        (
+            retained.get("team_template_digest"),
+            template.get("digest"),
+            "Team Template digest",
+        ),
+        (
+            retained.get("starter_source_digest"),
+            template.get("expected_source_digest"),
+            "starter Source Digest",
+        ),
+        (
+            retained.get("advisory_validation_workflow"),
+            advisory.get("workflow_identity"),
+            "Advisory Validation workflow",
+        ),
+    )
+    for actual, expected, label in comparisons:
+        _expect(actual, expected, label)
+
+
+def build_cutover_proof(
+    *,
+    template_release: Mapping[str, Any],
+    runner_evidence: Mapping[str, Any],
+    starter_source_bundle: Mapping[str, Any],
+    advisory_eligibility: Mapping[str, Any],
+    cross_platform: Mapping[str, Any],
+    batch_report: Mapping[str, Any],
+    tournament_plan: Mapping[str, Any],
+    competition_record: Mapping[str, Any],
+    template_authority_paths: Sequence[str] = (),
+) -> Mapping[str, Any]:
+    """Equality-check all retained evidence and project the cutover result."""
+    compatibility, catalog_identity, runner_commit = _release_authority(
+        template_release, runner_evidence
+    )
+    template = _mapping(template_release.get("team_template"), "Team Template")
+    expected_starter = template.get("expected_source_digest")
+    _expect(
+        starter_source_bundle.get("source_digest"),
+        expected_starter,
+        "starter Source Digest",
+    )
+    starter_versions = _mapping(
+        starter_source_bundle.get("versions"), "starter source versions"
+    )
+    _expect(
+        starter_versions.get("catalog"), catalog_identity, "starter source catalog"
+    )
+
+    for field, expected in (
+        ("result", "passed"),
+        ("authority", "github-advisory"),
+        ("platform", AMD64),
+        ("catalog", catalog_identity),
+        ("core_tool_commit", runner_commit),
+    ):
+        _expect(advisory_eligibility.get(field), expected, "Advisory " + field)
+    _validate_template_advisory_identity(template_release, advisory_eligibility)
+    selected_source = advisory_eligibility.get("source_digest")
+
+    _expect(
+        cross_platform.get("cross_platform_proof_format_version"),
+        "cross-platform-proof-v1",
+        "cross-platform proof format",
+    )
+    _expect(cross_platform.get("result"), "passed", "cross-platform result")
+    _expect(
+        cross_platform.get("source_digest"), selected_source, "cross-platform source"
+    )
+    shared_contract = _mapping(
+        cross_platform.get("shared_contract"), "shared native-platform contract"
+    )
+    shared_identities = _mapping(
+        shared_contract.get("identities"), "shared native-platform identities"
+    )
+    _expect(shared_identities.get("source"), selected_source, "shared source")
+    _expect(shared_identities.get("catalog"), catalog_identity, "shared catalog")
+    native = _mapping(
+        cross_platform.get("architecture_specific"), "native-platform evidence"
+    )
+    amd64 = _mapping(native.get(AMD64), "native Linux/AMD64 evidence")
+    arm64 = _mapping(native.get(ARM64), "native Linux/ARM64 evidence")
+    _expect(amd64.get("authority"), "advisory", "AMD64 authority")
+    _expect(
+        amd64.get("image_role"),
+        "disposable-confidence-image",
+        "AMD64 image role",
+    )
+    _expect(arm64.get("authority"), "canonical", "ARM64 authority")
+    _expect(arm64.get("image_role"), "bot-artifact", "ARM64 image role")
+    release = _mapping(
+        runner_evidence.get("catalog_release"), "Runner Catalog Release evidence"
+    )
+    release_manifest = _mapping(
+        release.get("manifest"), "Runner Catalog Release manifest"
+    )
+    platform_runtimes = _mapping(
+        release_manifest.get("platform_runtimes"), "Catalog Release platform runtimes"
+    )
+    for platform, label, retained in (
+        (AMD64, "AMD64", amd64),
+        (ARM64, "ARM64", arm64),
+    ):
+        runtime = _mapping(
+            platform_runtimes.get(platform), label + " Catalog Release runtime"
+        )
+        expected_runtime = _identity(
+            runtime.get("digest"),
+            SHA256_DIGEST,
+            label + " Catalog Release runtime digest",
+        )
+        observed_runtime = _identity(
+            retained.get("runtime_digest"), SHA256_DIGEST, label + " runtime digest"
+        )
+        _expect(
+            observed_runtime,
+            expected_runtime,
+            label + " runtime digest",
+        )
+        _identity(
+            retained.get("image_digest"), SHA256_DIGEST, label + " image digest"
+        )
+        _identity(
+            retained.get("validation_identity"),
+            VALIDATION_IDENTITY,
+            label + " validation identity",
+        )
+    if amd64.get("validation_identity") == arm64.get("validation_identity"):
+        raise ValueError("native validation identities must remain platform-specific")
+    _expect(
+        cross_platform.get("official_roster_source"),
+        "organizer-final-linux-arm64-only",
+        "official roster authority",
+    )
+
+    _expect(
+        batch_report.get("batch_report_format_version"),
+        "artifact-batch-report-v1",
+        "organizer batch report format",
+    )
+    _expect(batch_report.get("status"), "passed", "organizer batch report")
+    batch_teams = _items(batch_report.get("teams"), "organizer batch Teams")
+    if len(batch_teams) < 4 or any(
+        team.get("status") != "validated" for team in batch_teams
+    ):
+        raise ValueError("organizer batch did not Final Validate four proof Teams")
+
+    _expect(
+        tournament_plan.get("tournament_plan_format_version"),
+        "tournament-plan-v1",
+        "Tournament plan format",
+    )
+    plan_catalog = _mapping(tournament_plan.get("catalog"), "Tournament catalog")
+    _expect(plan_catalog.get("identity"), catalog_identity, "Tournament catalog")
+    store = _mapping(
+        tournament_plan.get("artifact_store"), "Tournament artifact store"
+    )
+    store_identity = store.get("index_identity")
+    teams = _items(tournament_plan.get("teams"), "Tournament Teams")
+    if len(teams) < 4:
+        raise ValueError("Tournament proof requires at least four Teams")
+    artifact_digests: set[str] = set()
+    planned_artifacts: dict[str, str] = {}
+    for team in teams:
+        team_id = _string(team.get("team_id"), "Tournament Team ID")
+        if team_id in planned_artifacts:
+            raise ValueError("Tournament plan contains a duplicate Team ID")
+        _expect(team.get("roster_ready"), True, "Tournament roster readiness")
+        source = _mapping(team.get("selected_source"), "selected Team Source")
+        _expect(source.get("source_digest"), selected_source, "planned source")
+        artifact = _mapping(
+            team.get("bot_artifact_manifest"), "Bot Artifact Manifest"
+        )
+        for field, expected in (
+            ("status", "validated"),
+            ("authority", "canonical"),
+            ("platform", ARM64),
+            ("source_digest", selected_source),
+        ):
+            _expect(artifact.get(field), expected, "Bot Artifact " + field)
+        artifact_identities = _mapping(
+            artifact.get("identities"), "Bot Artifact identities"
+        )
+        _expect(
+            artifact_identities.get("catalog"), catalog_identity, "Bot Artifact catalog"
+        )
+        reference = _mapping(
+            team.get("artifact_store_reference"), "artifact store reference"
+        )
+        _expect(reference.get("index_identity"), store_identity, "artifact store")
+        _expect(reference.get("platform"), ARM64, "stored Bot Artifact platform")
+        _expect(
+            reference.get("artifact_digest"),
+            artifact.get("artifact_digest"),
+            "stored Bot Artifact digest",
+        )
+        artifact_digest = _string(
+            artifact.get("artifact_digest"), "Bot Artifact digest"
+        )
+        planned_artifacts[team_id] = artifact_digest
+        artifact_digests.add(artifact_digest)
+    if arm64.get("image_digest") not in artifact_digests:
+        raise ValueError("planned Bot Artifact differs from ARM64 Final Validation")
+
+    record = _mapping(competition_record.get("record"), "Competition Record")
+    _expect(record.get("type"), "match_terminal", "executed Competition Record")
+    record_team_ids = record.get("team_ids")
+    if (
+        not isinstance(record_team_ids, list)
+        or len(record_team_ids) != 2
+        or any(not isinstance(team_id, str) for team_id in record_team_ids)
+        or len(set(record_team_ids)) != 2
+    ):
+        raise ValueError("executed Competition Record must identify two Teams")
+    if any(team_id not in planned_artifacts for team_id in record_team_ids):
+        raise ValueError("executed Competition Record contains an unplanned Team")
+    expected_record_artifacts = {
+        team_id: planned_artifacts[team_id] for team_id in record_team_ids
+    }
+    _expect(
+        record.get("artifact_digests"),
+        expected_record_artifacts,
+        "executed Bot Artifact digests",
+    )
+    if template_authority_paths:
+        raise ValueError("duplicate authoritative catalog remains in Template repository")
+    return {
+        "cutover_proof_format_version": "cross-repository-catalog-cutover-v1",
+        "result": "passed",
+        "template_release": dict(
+            _mapping(
+                template_release.get("template_repository"), "Template repository"
+            )
+        ),
+        "runner_commit": runner_commit,
+        "runner_offline_bundle_identity": _mapping(
+            compatibility.get("offline_bundle"), "offline bundle compatibility"
+        ).get("identity"),
+        "catalog_identity": catalog_identity,
+        "authority_direction": (
+            "Template consumes Runner Catalog Release; "
+            "Runner has no Template dependency"
+        ),
+        "starter_source_digest": {
+            "expected": expected_starter,
+            "observed": starter_source_bundle.get("source_digest"),
+            "migration_difference": "none",
+        },
+        "source_digest": selected_source,
+        "native_platform_evidence": {AMD64: dict(amd64), ARM64: dict(arm64)},
+        "organizer_workflow": {
+            "status": "passed",
+            "bot_artifact_digests": sorted(artifact_digests),
+            "artifact_store_identity": store_identity,
+            "planned_team_count": len(teams),
+            "executed_record_type": record.get("type"),
+            "executed_team_ids": list(record_team_ids),
+            "executed_artifact_digests": expected_record_artifacts,
+        },
+        "repository_scans": {
+            "runner_reverse_dependency_matches": [],
+            "runner_participant_template_paths": [],
+            "template_authoritative_catalog_paths": list(template_authority_paths),
+        },
+    }
+
+
+def _environment(core: Path) -> Mapping[str, str]:
+    environment = os.environ.copy()
+    existing = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = str(core) + (
+        os.pathsep + existing if existing else ""
+    )
+    environment["RPS_CORE_PATH"] = str(core)
+    return environment
+
+
+def _execute(
+    stage: str,
+    arguments: Sequence[str],
+    *,
+    output: Path,
+    environment: Mapping[str, str],
+    cwd: Path = PROJECT_ROOT,
+) -> None:
+    with (output / (stage + ".stdout.log")).open("w") as stdout, (
+        output / (stage + ".stderr.log")
+    ).open("w") as stderr:
+        completed = subprocess.run(
+            list(arguments),
+            cwd=cwd,
+            env=dict(environment),
+            stdout=stdout,
+            stderr=stderr,
+            text=True,
+        )
+    if completed.returncode != 0:
+        raise RuntimeError(stage + " failed; retained logs in " + str(output))
+
+
+def _sha256_identity(path: Path, version: str) -> str:
+    return version + "@sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _template_authority_scan(checkout: Path) -> list[str]:
+    completed = subprocess.run(
+        ["git", "ls-files"],
+        cwd=checkout,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise ValueError("could not scan the Template repository")
+    forbidden_files = {
+        "CATALOG_RELEASE.md",
+        "freeze-tournament-catalog",
+        ".github/workflows/catalog-contract.yml",
+        ".github/workflows/catalog-release.yml",
+        "tests/test_catalog_release.py",
+        "tests/test_core_contract.py",
+    }
+    return sorted(
+        path
+        for path in completed.stdout.splitlines()
+        if path.startswith("language_environments/") or path in forbidden_files
+    )
+
+
+def _run(options: argparse.Namespace) -> None:
+    output = options.output.expanduser()
+    if output.exists() or output.is_symlink():
+        raise ValueError("output already exists and will not be replaced")
+    options.output = output.resolve()
+    try:
+        options.output.relative_to(PROJECT_ROOT)
+    except ValueError:
+        pass
+    else:
+        raise ValueError("cutover proof output must be outside the Template checkout")
+    source = options.source.expanduser()
+    if not source.is_dir() or source.is_symlink():
+        raise ValueError("selected Team Source must be a non-symlink directory")
+    options.source = source.resolve()
+    options.runner_evidence = options.runner_evidence.expanduser().resolve()
+    options.advisory_evidence = options.advisory_evidence.expanduser().resolve()
+    options.core_path = options.core_path.expanduser().resolve()
+
+    materialized = subprocess.run(
+        [str(PROJECT_ROOT / "materialize-core-tool"), str(options.core_path)],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if materialized.returncode != 0:
+        raise ValueError(materialized.stderr.strip() or materialized.stdout.strip())
+    lock = read_lock(CORE_LOCK)
+    core = options.core_path.resolve()
+    catalog = core / lock["catalog"]["path"]
+    environment = _environment(core)
+
+    descriptor = _read_object(DESCRIPTOR, "Team Template descriptor")
+    release_tag = options.template_release or str(descriptor.get("release_tag", ""))
+    verified = subprocess.run(
+        [str(PROJECT_ROOT / "release-team-template"), "verify", release_tag],
+        cwd=PROJECT_ROOT,
+        env=dict(environment),
+        capture_output=True,
+        text=True,
+    )
+    if verified.returncode != 0:
+        raise ValueError(verified.stderr.strip() or verified.stdout.strip())
+    template_release = _mapping(
+        json.loads(verified.stdout), "verified Template Release"
+    )
+
+    runner_evidence = _read_object(
+        options.runner_evidence, "runner-catalog-independence-v1 evidence"
+    )
+    _release_authority(template_release, runner_evidence)
+    template_authority_paths = _template_authority_scan(PROJECT_ROOT)
+    if template_authority_paths:
+        raise ValueError(
+            "duplicate authoritative catalog remains in Template repository: "
+            + ", ".join(template_authority_paths)
+        )
+
+    options.output.mkdir(parents=True)
+    (options.output / "template-release.json").write_text(
+        json.dumps(template_release, indent=2, sort_keys=True) + "\n"
+    )
+    shutil.copyfile(
+        options.runner_evidence,
+        options.output / "runner-catalog-independence.json",
+    )
+    template_bundle = options.output / "template-release.bundle"
+    _execute(
+        "retain-template-release",
+        (
+            "git",
+            "bundle",
+            "create",
+            str(template_bundle),
+            "refs/tags/" + release_tag,
+        ),
+        output=options.output,
+        environment=environment,
+    )
+
+    offline_template = options.output / "offline-template"
+    _execute(
+        "clone-retained-template-release",
+        ("git", "clone", "--quiet", str(template_bundle), str(offline_template)),
+        output=options.output,
+        environment=environment,
+    )
+    _execute(
+        "checkout-retained-template-release",
+        ("git", "checkout", "--quiet", "--detach", release_tag),
+        output=options.output,
+        environment=environment,
+        cwd=offline_template,
+    )
+    offline_core = options.output / "offline-runner"
+    _execute(
+        "materialize-retained-runner",
+        (str(offline_template / "materialize-core-tool"), str(offline_core)),
+        output=options.output,
+        environment=environment,
+        cwd=offline_template,
+    )
+    offline_lock = read_lock(offline_template / "core-tool.lock.json")
+    _expect(offline_lock, lock, "clean-clone compatibility lock")
+    core = offline_core.resolve()
+    catalog = core / lock["catalog"]["path"]
+    environment = _environment(core)
+    descriptor = _read_object(
+        offline_template / "team-template.json", "clean-clone Team Template descriptor"
+    )
+    reproduced = subprocess.run(
+        (str(offline_template / "release-team-template"), "verify", release_tag),
+        cwd=offline_template,
+        env=dict(environment),
+        capture_output=True,
+        text=True,
+    )
+    (options.output / "verify-retained-template-release.stdout.log").write_text(
+        reproduced.stdout
+    )
+    (options.output / "verify-retained-template-release.stderr.log").write_text(
+        reproduced.stderr
+    )
+    if reproduced.returncode != 0:
+        raise RuntimeError(
+            "clean-clone Template Release verification failed; retained logs in "
+            + str(options.output)
+        )
+    reproduced_release = _mapping(
+        json.loads(reproduced.stdout), "clean-clone Template Release"
+    )
+    _expect(reproduced_release, template_release, "clean-clone Template Release")
+    template_authority_paths = _template_authority_scan(offline_template)
+    if template_authority_paths:
+        raise ValueError(
+            "duplicate authoritative catalog remains in retained Template Release: "
+            + ", ".join(template_authority_paths)
+        )
+
+    starter_bundle_path = options.output / "starter-source-bundle"
+    _execute(
+        "validate-release-starter",
+        (
+            sys.executable,
+            "-m",
+            "rps_runner.source_cli",
+            "--catalog",
+            str(catalog),
+            "--environment",
+            "python",
+            "--source",
+            str(offline_template / str(descriptor["path"])),
+            "--bundle",
+            str(starter_bundle_path),
+        ),
+        output=options.output,
+        environment=environment,
+        cwd=offline_template,
+    )
+
+    native_output = options.output / "native-platform-proof"
+    _execute(
+        "prove-native-platforms",
+        (
+            str(offline_template / "prove-amd64-against-arm64"),
+            "--advisory-evidence",
+            str(options.advisory_evidence),
+            "--source",
+            str(options.source.resolve()),
+            "--selected-commit",
+            options.selected_commit,
+            "--output",
+            str(native_output),
+            "--core-path",
+            str(core),
+        ),
+        output=options.output,
+        environment=environment,
+        cwd=offline_template,
+    )
+
+    organizer = options.output / "organizer-workflow"
+    mapping_path = options.output / "proof-teams.json"
+    mapping_path.write_text(
+        json.dumps(
+            {
+                "teams": [
+                    {
+                        "team_id": "cutover-" + suffix,
+                        "display_name": "Catalog Cutover " + suffix.upper(),
+                        "source_directory": str(options.source.resolve()),
+                    }
+                    for suffix in "abcd"
+                ]
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    _execute(
+        "build-certify-preserve-plan",
+        (
+            sys.executable,
+            "-m",
+            "rps_runner.batch_plan_cli",
+            "--teams",
+            str(mapping_path),
+            "--catalog",
+            str(catalog),
+            "--output",
+            str(organizer),
+            "--tournament-seed",
+            "8675309",
+            "--execution-mode",
+            "step",
+            "--jobs",
+            "1",
+        ),
+        output=options.output,
+        environment=environment,
+        cwd=offline_template,
+    )
+    tournament = organizer / "tournament"
+    _execute(
+        "execute-bot-artifact",
+        (
+            sys.executable,
+            "-m",
+            "rps_runner.tournament_cli",
+            "plan",
+            "--plan",
+            str(organizer / "tournament-plan.json"),
+            "--catalog",
+            str(catalog),
+            "--directory",
+            str(tournament),
+            "--tournament-id",
+            "catalog-cutover-proof",
+        ),
+        output=options.output,
+        environment=environment,
+        cwd=offline_template,
+    )
+    records = sorted((tournament / "records").glob("*.json"))
+    if not records:
+        raise ValueError("Tournament execution retained no Competition Record")
+
+    proof = dict(
+        build_cutover_proof(
+            template_release=template_release,
+            runner_evidence=runner_evidence,
+            starter_source_bundle=_read_object(
+                starter_bundle_path / "source-bundle.json", "starter source bundle"
+            ),
+            advisory_eligibility=_read_object(
+                native_output / "github-advisory" / "eligibility-evidence.json",
+                "Advisory eligibility evidence",
+            ),
+            cross_platform=_read_object(
+                native_output / "cross-platform-proof.json", "cross-platform proof"
+            ),
+            batch_report=_read_object(
+                organizer / "batch-report.json", "organizer batch report"
+            ),
+            tournament_plan=_read_object(
+                organizer / "tournament-plan.json", "Tournament plan"
+            ),
+            competition_record=_read_object(records[0], "Competition Record"),
+            template_authority_paths=template_authority_paths,
+        )
+    )
+    proof["retained_offline_inputs"] = {
+        "template_release_bundle": _sha256_identity(
+            template_bundle, "rps-template-release-offline-bundle-v1"
+        ),
+        "runner_bundle": lock["offline_bundle"]["identity"],
+        "catalog_release_evidence": _sha256_identity(
+            options.output / "runner-catalog-independence.json",
+            "runner-catalog-independence-evidence-v1",
+        ),
+        "selected_team_source": "retained-in-native-and-organizer-source-bundles",
+        "pinned_runtimes": {
+            platform: {
+                "digest": proof["native_platform_evidence"][platform][
+                    "runtime_digest"
+                ],
+                "retention": "provided-offline-on-native-validation-host",
+            }
+            for platform in (AMD64, ARM64)
+        },
+        "reproduction": {
+            "template_release": "cloned-and-verified-from-retained-bundle",
+            "runner": "materialized-and-verified-from-retained-bundle",
+            "network_inputs": "none",
+        },
+    }
+    (options.output / "cutover-proof.json").write_text(
+        json.dumps(proof, indent=2, sort_keys=True) + "\n"
+    )
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Prove one Template Release through native Advisory and Final "
+            "Validation into organizer Tournament execution"
+        )
+    )
+    parser.add_argument("--runner-evidence", required=True, type=Path)
+    parser.add_argument("--advisory-evidence", required=True, type=Path)
+    parser.add_argument("--source", required=True, type=Path)
+    parser.add_argument("--selected-commit", required=True)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--template-release")
+    parser.add_argument(
+        "--core-path",
+        type=Path,
+        default=Path(
+            os.environ.get(
+                "RPS_CORE_PATH", PROJECT_ROOT / ".core" / "rps-tournament"
+            )
+        ),
+    )
+    return parser
+
+
+def main(arguments: Sequence[str] | None = None) -> int:
+    try:
+        _run(_parser().parse_args(arguments))
+    except (KeyError, OSError, TypeError, ValueError, RuntimeError) as error:
+        print("Cross-repository cutover proof failure: " + str(error), file=sys.stderr)
+        return 1
+    print("Cross-repository catalog cutover proof passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

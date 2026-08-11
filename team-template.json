@@ -2,6 +2,7 @@
   "format_version": "rps-team-template-v1",
   "version": "python-team-template-v1",
   "path": "team_source",
+  "expected_source_digest": "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a",
   "release_tag": "template-v1",
   "advisory_validation_workflow": ".github/workflows/team-advisory-validation.yml"
 }

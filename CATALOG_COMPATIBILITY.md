@@ -43,7 +43,28 @@ Template or Template Release. Final Validation independently uses the
 organizer-selected Catalog Release and exact selected Team Source; only that
 organizer-controlled result can authorize a Bot Artifact for a Tournament.
 
-To update the lock, begin with a published Runner Catalog Release, copy every
-coordinate together, install the matching offline bundle, materialize it into a
-new destination, and run the full test suite. Never edit one coordinate to make
-a mismatched checkout appear compatible.
+## Update the compatibility lock safely
+
+Begin with the offline bundle and `runner-catalog-independence-v1` evidence
+published together by one new Runner Catalog Release. Prepare, rather than
+hand-edit, the replacement pair:
+
+```sh
+./prepare-catalog-lock \
+  --runner-bundle <published-runner-bundle> \
+  --runner-evidence <catalog-independence-evidence.json> \
+  --output <new-empty-directory>
+```
+
+The command requires a passed independence scan and organizer workflow proof,
+equality-checks the release manifest and its copy-ready compatibility
+coordinates, verifies the bundle identity, clones it without network access,
+and verifies the exact Runner commit, package, catalog, and every asset. It
+writes nothing at the destination unless the complete set passes.
+
+Review the retained evidence, then copy the lock and bundle together into a
+clean Template checkout. Materialize to a new destination, run the full suites
+in both repositories, and publish a new Template Release. Never edit one
+coordinate to make a mismatched checkout appear compatible. Never move or
+recreate the earlier Catalog Release; historical tags, bundles, annotations,
+and procedures remain immutable evidence even after being superseded.

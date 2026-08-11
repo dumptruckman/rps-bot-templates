@@ -79,6 +79,67 @@ def read_lock(path: Path) -> Mapping[str, Any]:
     return lock
 
 
+def verify_independence_evidence(
+    value: object,
+    expected_coordinates: Mapping[str, Any] | None = None,
+) -> Mapping[str, Any]:
+    evidence = _mapping(value, "Runner evidence")
+    if evidence.get("evidence_format_version") != "runner-catalog-independence-v1":
+        raise CompatibilityError("Runner evidence format is unsupported")
+    if evidence.get("status") != "passed":
+        raise CompatibilityError("Runner catalog independence has not passed")
+    coordinates = _mapping(
+        evidence.get("compatibility_coordinates"), "compatibility coordinates"
+    )
+    if expected_coordinates is not None and coordinates != expected_coordinates:
+        raise CompatibilityError(
+            "Runner and Template compatibility coordinates differ"
+        )
+
+    release = _mapping(evidence.get("catalog_release"), "Catalog Release evidence")
+    manifest = _mapping(release.get("manifest"), "Catalog Release manifest")
+    if manifest.get("compatibility_coordinates") != coordinates:
+        raise CompatibilityError(
+            "Catalog Release manifest and independence coordinates differ"
+        )
+
+    scan = _mapping(evidence.get("repository_scan"), "Runner repository scan")
+    if scan.get("companion_repository") != "absent":
+        raise CompatibilityError(
+            "Runner independence evidence includes the companion repository"
+        )
+    empty_evidence = (
+        (scan, "dependency_matches", "reverse Runner dependency"),
+        (scan, "participant_template_paths", "Runner Team Template path"),
+        (release, "participant_template_asset_paths", "participant catalog asset"),
+        (release, "participant_template_digest_fields", "Team Template digest"),
+        (release, "participant_template_paths", "bundled Team Template path"),
+        (release, "unowned_catalog_paths", "unowned catalog path"),
+    )
+    for container, field, label in empty_evidence:
+        if container.get(field) != []:
+            raise CompatibilityError(
+                label + " remains in Runner independence evidence"
+            )
+    workflows = _mapping(
+        evidence.get("organizer_workflows"), "organizer workflow evidence"
+    )
+    if workflows.get("status") != "passed":
+        raise CompatibilityError("Runner organizer workflow proof has not passed")
+    return coordinates
+
+
+def read_independence_evidence(path: Path) -> Mapping[str, Any]:
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CompatibilityError(
+            "Runner evidence is unreadable: " + str(error)
+        ) from error
+    verify_independence_evidence(value)
+    return _mapping(value, "Runner evidence")
+
+
 def _catalog_relative_path(value: str) -> PurePosixPath:
     path = PurePosixPath(value)
     if (

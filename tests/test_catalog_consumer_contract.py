@@ -75,6 +75,9 @@ class CatalogConsumerContractTests(unittest.TestCase):
         runner = lock["runner"]
         self.assertEqual(set(runner), {"commit", "package_version"})
         self.assertRegex(runner["commit"], FULL_COMMIT)
+        self.assertEqual(
+            runner["commit"], "e032114ac567fa6a454796862df3fed855b29058"
+        )
         self.assertEqual(runner["package_version"], "0.1.0")
 
         catalog_claim = lock["catalog"]
@@ -82,6 +85,11 @@ class CatalogConsumerContractTests(unittest.TestCase):
             catalog_claim["path"], "language_environments/catalog-v1/catalog.json"
         )
         self.assertRegex(catalog_claim["identity"], CONTENT_IDENTITY)
+        self.assertEqual(
+            catalog_claim["identity"],
+            "rps-language-environment-catalog-v1@sha256:"
+            "8724e24a870b6004a01bca95d23059c94cb9abe2c73e15018db2ad0d0a02c181",
+        )
         self.assertTrue(catalog_claim["assets"])
         for identity in catalog_claim["assets"].values():
             self.assertRegex(identity, CONTENT_IDENTITY)
@@ -174,6 +182,7 @@ class CatalogConsumerContractTests(unittest.TestCase):
         active_commands = (
             PROJECT_ROOT / "validate-team",
             PROJECT_ROOT / "prove-amd64-against-arm64",
+            PROJECT_ROOT / "prove-cross-repository-cutover",
             PROJECT_ROOT / "tests" / "test_team_branch_template.py",
         )
         for path in active_commands:

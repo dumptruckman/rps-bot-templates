@@ -7,8 +7,10 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from typing import Any, Dict, Mapping, Tuple
 
 from catalog_compatibility import (
@@ -72,6 +74,7 @@ def _descriptor(tag: str) -> Dict[str, str]:
         "format_version",
         "version",
         "path",
+        "expected_source_digest",
         "release_tag",
         "advisory_validation_workflow",
     }
@@ -87,6 +90,8 @@ def _descriptor(tag: str) -> Dict[str, str]:
             "release tag " + repr(tag) + " does not match team-template.json"
         )
     _relative_path(raw["path"], "Team Template path")
+    if not FULL_DIGEST.fullmatch(raw["expected_source_digest"]):
+        raise ReleaseError("Team Template expected_source_digest is invalid")
     _relative_path(
         raw["advisory_validation_workflow"], "Advisory Validation workflow path"
     )
@@ -148,7 +153,73 @@ def _file_digest(path: Path, label: str) -> str:
         raise ReleaseError(label + " is unreadable: " + str(error)) from error
 
 
-def _team_template(descriptor: Mapping[str, str]) -> Dict[str, Any]:
+def _validated_source_digest(
+    descriptor: Mapping[str, str], compatibility: Mapping[str, Any]
+) -> str:
+    core = _core_path()
+    catalog = core / str(compatibility["catalog"]["path"])
+    source = PROJECT_ROOT.joinpath(
+        *_relative_path(descriptor["path"], "Team Template path").parts
+    )
+    work = Path(tempfile.mkdtemp(prefix="rps-template-source-"))
+    bundle = work / "source-bundle"
+    environment = os.environ.copy()
+    existing = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = str(core) + (
+        os.pathsep + existing if existing else ""
+    )
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "rps_runner.source_cli",
+                "--catalog",
+                str(catalog),
+                "--environment",
+                "python",
+                "--source",
+                str(source),
+                "--bundle",
+                str(bundle),
+            ],
+            cwd=PROJECT_ROOT,
+            env=environment,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode != 0:
+            detail = completed.stderr.strip() or completed.stdout.strip()
+            raise ReleaseError("Team Template source validation failed: " + detail)
+        source_manifest = _read_object(
+            bundle / "source-bundle.json", "Team Template source bundle"
+        )
+        observed = source_manifest.get("source_digest")
+        expected = descriptor["expected_source_digest"]
+        if observed != expected:
+            raise ReleaseError(
+                "Team Template Source Digest mismatch: expected "
+                + expected
+                + ", got "
+                + repr(observed)
+            )
+        if source_manifest.get("versions", {}).get("catalog") != compatibility[
+            "catalog"
+        ]["identity"]:
+            raise ReleaseError("Team Template source validation used another catalog")
+        return expected
+    finally:
+        for path in work.rglob("*"):
+            try:
+                path.chmod(0o700 if path.is_dir() else 0o600)
+            except OSError:
+                pass
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def _team_template(
+    descriptor: Mapping[str, str], compatibility: Mapping[str, Any]
+) -> Dict[str, Any]:
     relative_root = _relative_path(descriptor["path"], "Team Template path")
     root = PROJECT_ROOT.joinpath(*relative_root.parts)
     if root.is_symlink() or not root.is_dir():
@@ -175,6 +246,9 @@ def _team_template(descriptor: Mapping[str, str]) -> Dict[str, Any]:
     return {
         "version": descriptor["version"],
         "path": relative_root.as_posix(),
+        "expected_source_digest": _validated_source_digest(
+            descriptor, compatibility
+        ),
         "digest": digest,
         "files": files,
     }
@@ -202,7 +276,7 @@ def build_manifest(tag: str) -> Dict[str, Any]:
             "commit": _run("git", "rev-parse", "HEAD"),
             "tag": tag,
         },
-        "team_template": _team_template(descriptor),
+        "team_template": _team_template(descriptor, compatibility),
         "catalog_compatibility": compatibility,
         "advisory_validation": {
             "workflow_path": workflow_relative.as_posix(),
@@ -265,7 +339,14 @@ def _verify_release(tag: str) -> Dict[str, Any]:
         raise ReleaseError(
             "release tag " + repr(tag) + " targets the wrong Template repository commit"
         )
-    expected = build_manifest(tag)
+    try:
+        expected = build_manifest(tag)
+    except ReleaseError as error:
+        if "Team Template Source Digest mismatch" in str(error):
+            raise ReleaseError(
+                "Team Template changed since the release was created: " + str(error)
+            ) from error
+        raise
     if recorded.get("team_template") != expected["team_template"]:
         raise ReleaseError("Team Template changed since the release was created")
     if recorded != expected:

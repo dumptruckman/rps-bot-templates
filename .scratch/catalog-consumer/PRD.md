@@ -1,8 +1,8 @@
 # Consume the Runner-owned catalog
 
-Status: ready-for-agent
+Status: resolved
 
-Implementation status: in progress (tickets 01-03 resolved)
+Implementation status: complete (tickets 01-04 resolved)
 
 ## Purpose
 

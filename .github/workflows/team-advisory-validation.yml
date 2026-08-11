@@ -223,6 +223,11 @@ jobs:
                   "team_template_digest": get_nested_value(
                       template_release, "team_template", "digest"
                   ) or unavailable,
+                  "starter_source_digest": get_nested_value(
+                      template_release,
+                      "team_template",
+                      "expected_source_digest",
+                  ) or unavailable,
                   "advisory_validation_workflow": get_nested_value(
                       template_release,
                       "advisory_validation",

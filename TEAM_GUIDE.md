@@ -12,8 +12,9 @@ file inside that directory. Do not edit or replace files elsewhere in this
 repository, even if Git permits it.
 
 The starter is the participant-facing Python Team Template. Its Template Release
-manifest records the exact starter digest and claims compatibility with the
-Catalog Release in `core-tool.lock.json`; it is not a catalog-owned execution
+manifest records the exact starter tree digest and expected Source Digest, and
+claims compatibility with the Catalog Release in `core-tool.lock.json`; it is
+not a catalog-owned execution
 asset. The organizer creates Team branches from the dereferenced Template
 Release tag, and each Team changes only its `team_source/` copy.
 

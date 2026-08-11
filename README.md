@@ -43,6 +43,11 @@ Submission Candidate on the organizer's native ARM64 machine, runs canonical
 Final Validation, and retains a contract comparison against its GitHub Advisory
 Validation evidence without conflating the two platform-specific images.
 
+The [cross-repository cutover proof](CROSS_REPOSITORY_CUTOVER.md) starts from a
+clean Template Release and offline Runner inputs, verifies the one-way authority
+boundary and unchanged starter Source Digest, then carries selected Team Source
+through native evidence, preserved Bot Artifact, Tournament plan, and execution.
+
 The [Template Release runbook](TEMPLATE_RELEASE.md) defines how maintainers
 publish the participant-facing starter, pin one Runner-owned Catalog Release,
 and create Team branches from the exact annotated release tag. Catalog Releases
@@ -89,7 +94,8 @@ Materialize the locked core commit from the repository-owned bundle, then run:
 python3 -m unittest discover -s tests -v
 ```
 
-Change the lock only by copying every coordinate from a published Runner Catalog
-Release and replacing the offline bundle with the bytes named by that release.
-Tests reject a mismatched Runner commit, package version, catalog identity, asset
-map, or bundle identity.
+Change the lock only with the verified preparation workflow in
+[`CATALOG_COMPATIBILITY.md`](CATALOG_COMPATIBILITY.md). It consumes the
+Runner-published bundle and catalog-independence evidence as one set; tests
+reject a mismatched Runner commit, package version, catalog identity, asset map,
+or bundle identity.

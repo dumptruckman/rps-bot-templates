@@ -75,3 +75,8 @@ source and Source Digest, the complete diff, explanation and approvals, the
 replacement Source Digest, and its distinct Final Validation and Bot Artifact
 identities. Never treat strategy enhancement as compatibility repair, and never
 transfer the original Advisory Validation result to repaired Team Source.
+
+For the final release-to-Tournament acceptance path, run this command through
+[`prove-cross-repository-cutover`](CROSS_REPOSITORY_CUTOVER.md). That outer
+proof first verifies the Template and Catalog Releases, then preserves and
+executes the accepted Bot Artifact through the Runner's organizer interfaces.
