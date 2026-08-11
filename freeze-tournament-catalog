@@ -16,6 +16,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent
 CATALOG_PATH = PROJECT_ROOT / "language_environments" / "catalog-v1" / "catalog.json"
 CORE_LOCK_PATH = PROJECT_ROOT / "core-tool.lock.json"
+CORE_BUNDLE_PATH = PROJECT_ROOT / "core-tool.bundle"
 FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
 FULL_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 FULL_ACTION_REF = re.compile(r"^[0-9a-f]{40}$")
@@ -58,19 +59,10 @@ def _core_path() -> Path:
 
 def _verify_core_bundle(lock: dict[str, Any]) -> None:
     try:
-        bundle_record = lock["offline_bundle"]
-        relative_path = Path(bundle_record["path"])
-        expected_identity = bundle_record["identity"]
+        expected_identity = lock["offline_bundle"]["identity"]
     except (KeyError, TypeError) as error:
         raise ReleaseError("core-tool.lock.json must pin the bundled core history") from error
-    unresolved_bundle_path = PROJECT_ROOT / relative_path
-    bundle_path = unresolved_bundle_path.resolve()
-    if (
-        relative_path.is_absolute()
-        or PROJECT_ROOT not in bundle_path.parents
-        or unresolved_bundle_path.is_symlink()
-        or not bundle_path.is_file()
-    ):
+    if CORE_BUNDLE_PATH.is_symlink() or not CORE_BUNDLE_PATH.is_file():
         raise ReleaseError("core tool bundle must be a repository-owned regular file")
     identity_prefix = "rps-runner-offline-bundle-v1@"
     if not str(expected_identity).startswith(identity_prefix) or not FULL_DIGEST.fullmatch(
@@ -78,7 +70,9 @@ def _verify_core_bundle(lock: dict[str, Any]) -> None:
     ):
         raise ReleaseError("core tool bundle must be pinned by a full SHA-256 identity")
     actual_identity = (
-        identity_prefix + "sha256:" + hashlib.sha256(bundle_path.read_bytes()).hexdigest()
+        identity_prefix
+        + "sha256:"
+        + hashlib.sha256(CORE_BUNDLE_PATH.read_bytes()).hexdigest()
     )
     if actual_identity != expected_identity:
         raise ReleaseError(
@@ -90,8 +84,6 @@ def _verify_core_pin(core_path: Path, lock: dict[str, Any]) -> None:
     runner = lock.get("runner", {})
     if not FULL_COMMIT.fullmatch(str(runner.get("commit", ""))):
         raise ReleaseError("core-tool.lock.json must pin a full 40-character commit")
-    if not re.fullmatch(r"[^/\s]+/[^/\s]+", str(runner.get("repository", ""))):
-        raise ReleaseError("core-tool.lock.json must name an owner/repository")
     if not str(runner.get("package_version", "")):
         raise ReleaseError("core-tool.lock.json must pin a package version")
 

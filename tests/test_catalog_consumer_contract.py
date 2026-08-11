@@ -73,10 +73,7 @@ class CatalogConsumerContractTests(unittest.TestCase):
         )
 
         runner = lock["runner"]
-        self.assertEqual(
-            set(runner), {"repository", "commit", "package_version"}
-        )
-        self.assertEqual(runner["repository"], "dumptruckman/rps-bot-tournament")
+        self.assertEqual(set(runner), {"commit", "package_version"})
         self.assertRegex(runner["commit"], FULL_COMMIT)
         self.assertEqual(runner["package_version"], "0.1.0")
 
@@ -90,13 +87,13 @@ class CatalogConsumerContractTests(unittest.TestCase):
             self.assertRegex(identity, CONTENT_IDENTITY)
 
         offline_bundle = lock["offline_bundle"]
-        self.assertEqual(offline_bundle["path"], "core-tool.bundle")
+        self.assertEqual(set(offline_bundle), {"identity"})
         self.assertRegex(offline_bundle["identity"], CONTENT_IDENTITY)
         self.assertEqual(
             offline_bundle["identity"],
             "rps-runner-offline-bundle-v1@sha256:"
             + hashlib.sha256(
-                (PROJECT_ROOT / offline_bundle["path"]).read_bytes()
+                (PROJECT_ROOT / "core-tool.bundle").read_bytes()
             ).hexdigest(),
         )
 
@@ -139,7 +136,14 @@ class CatalogConsumerContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / "rps-tournament"
             subprocess.run(
-                ["git", "init", "--quiet", str(destination)],
+                [str(PROJECT_ROOT / "materialize-core-tool"), str(destination)],
+                cwd=PROJECT_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(destination), "checkout", "--quiet", "--detach", "HEAD^"],
                 check=True,
                 capture_output=True,
                 text=True,

@@ -11,6 +11,7 @@ from typing import Sequence
 
 ROOT = Path(__file__).resolve().parent
 LOCK_PATH = ROOT / "core-tool.lock.json"
+BUNDLE_PATH = ROOT / "core-tool.bundle"
 
 
 def run(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -32,19 +33,17 @@ def main() -> int:
         return fail("usage: materialize-core-tool [destination]")
     try:
         lock = json.loads(LOCK_PATH.read_text())
-        bundle_record = lock["offline_bundle"]
-        bundle = ROOT / bundle_record["path"]
-        expected_identity = bundle_record["identity"]
+        expected_identity = lock["offline_bundle"]["identity"]
         expected_commit = lock["runner"]["commit"]
         actual_identity = (
             "rps-runner-offline-bundle-v1@sha256:"
-            + hashlib.sha256(bundle.read_bytes()).hexdigest()
+            + hashlib.sha256(BUNDLE_PATH.read_bytes()).hexdigest()
         )
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         return fail(str(error))
     if actual_identity != expected_identity:
         return fail(
-            f"{bundle.name} identity is {actual_identity}; expected {expected_identity}"
+            f"{BUNDLE_PATH.name} identity is {actual_identity}; expected {expected_identity}"
         )
 
     if destination.exists():
@@ -61,7 +60,7 @@ def main() -> int:
         return fail(f"existing destination is not a clean checkout of {expected_commit}")
 
     destination.parent.mkdir(parents=True, exist_ok=True)
-    cloned = run(["git", "clone", "--quiet", str(bundle), str(destination)])
+    cloned = run(["git", "clone", "--quiet", str(BUNDLE_PATH), str(destination)])
     if cloned.returncode != 0:
         return fail(cloned.stderr.strip() or "could not clone bundled core history")
     checked_out = run(

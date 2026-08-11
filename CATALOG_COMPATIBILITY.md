@@ -8,11 +8,14 @@ compatibility claim does not transfer authority in either direction.
 
 `core-tool.lock.json` records the complete immutable claim:
 
-- `runner` names the repository, full commit, and exact package version;
+- `runner` names the full commit and exact package version;
 - `catalog` names the repository-relative catalog path, canonical content
   identity, and complete catalog asset identity map; and
-- `offline_bundle` names the repository-owned bundle path and the versioned
-  SHA-256 identity of its bytes.
+- `offline_bundle` names the versioned SHA-256 identity of its bytes.
+
+The local filename `core-tool.bundle` and the Runner repository slug used by a
+legacy workflow are transport wiring, not release coordinates, so they remain
+outside the compatibility claim.
 
 Every coordinate is equality-matched. A missing or different commit, package
 version, path, catalog identity, asset identity, or bundle identity is a

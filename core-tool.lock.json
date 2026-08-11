@@ -1,7 +1,6 @@
 {
   "format_version": "rps-catalog-compatibility-v1",
   "runner": {
-    "repository": "dumptruckman/rps-bot-tournament",
     "commit": "ba9242ed46023a237f76e82d1296e8af706fd48c",
     "package_version": "0.1.0"
   },
@@ -32,7 +31,6 @@
     }
   },
   "offline_bundle": {
-    "path": "core-tool.bundle",
     "identity": "rps-runner-offline-bundle-v1@sha256:accf69c77e12920275b2a023b278c24cf4ab6f9df438d4e7aaf4db17f49890bd"
   }
 }

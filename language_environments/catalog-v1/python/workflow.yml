@@ -17,7 +17,7 @@ jobs:
           import json
           with open("core-tool.lock.json") as stream:
               lock = json.load(stream)
-          print("repository=" + lock["runner"]["repository"])
+          print("repository=dumptruckman/rps-bot-tournament")
           print("commit=" + lock["runner"]["commit"])
           PY
       - name: Check out pinned Tournament core

@@ -45,13 +45,11 @@ class ImmutableCoreContractTests(unittest.TestCase):
         offline_bundle = lock["offline_bundle"]
         self.assertRegex(runner["commit"], FULL_COMMIT)
         self.assertEqual(runner["package_version"], "0.1.0")
-        self.assertRegex(runner["repository"], r"^[^/\s]+/[^/\s]+$")
-        self.assertEqual(offline_bundle["path"], "core-tool.bundle")
         self.assertEqual(
             offline_bundle["identity"],
             "rps-runner-offline-bundle-v1@sha256:"
             + hashlib.sha256(
-                (PROJECT_ROOT / offline_bundle["path"]).read_bytes()
+                (PROJECT_ROOT / "core-tool.bundle").read_bytes()
             ).hexdigest(),
         )
 
@@ -92,7 +90,9 @@ class ImmutableCoreContractTests(unittest.TestCase):
             self.assertNotRegex(workflow, r"uses:\s+[^\s]+@v\d+")
             self.assertNotIn("secrets.", workflow)
             if workflow_path == CATALOG.parent / "python" / "workflow.yml":
-                self.assertIn("lock[\"runner\"][\"repository\"]", workflow)
+                self.assertIn(
+                    "repository=dumptruckman/rps-bot-tournament", workflow
+                )
                 self.assertIn("lock[\"runner\"][\"commit\"]", workflow)
                 self.assertIn("ref: ${{ steps.core_lock.outputs.commit }}", workflow)
             else:

@@ -38,7 +38,7 @@ removed.
 ## Answer
 
 `core-tool.lock.json` now carries the complete immutable catalog compatibility
-claim: exact Runner repository and commit, package version, catalog path and
+claim: exact Runner commit, package version, catalog path and
 identity, catalog asset identities, and versioned offline-bundle identity. The
 materializer consumes the new lock shape and rejects an existing destination
 that is not the locked clean Runner checkout.
