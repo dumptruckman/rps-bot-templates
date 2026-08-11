@@ -22,8 +22,14 @@ class TeamValidationCommandTests(unittest.TestCase):
         self.bin = self.root / "bin"
         self.bin.mkdir()
         self.core = self.root / "core"
+        subprocess.run(
+            [str(PROJECT_ROOT / "materialize-core-tool"), str(self.core)],
+            cwd=PROJECT_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         package = self.core / "rps_runner"
-        package.mkdir(parents=True)
         (package / "__init__.py").write_text("")
         self.log = self.root / "calls.jsonl"
         self._write_executable(
@@ -161,7 +167,7 @@ class TeamValidationCommandTests(unittest.TestCase):
             {
                 "PATH": str(self.bin) + os.pathsep + process_environment["PATH"],
                 "RPS_CORE_PATH": str(self.core),
-            "RPS_TEST_CORE_COMMIT": LOCK["runner"]["commit"],
+                "RPS_TEST_CORE_COMMIT": LOCK["runner"]["commit"],
                 "RPS_TEST_LOG": str(self.log),
             }
         )
@@ -184,7 +190,7 @@ class TeamValidationCommandTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         calls = self.calls()
         self.assertEqual([call["stage"] for call in calls], ["source", "build", "certification"])
-        catalog = str(PROJECT_ROOT / "language_environments/catalog-v1/catalog.json")
+        catalog = str(self.core.resolve() / LOCK["catalog"]["path"])
         self.assertIn(catalog, calls[0]["arguments"])
         self.assertIn(str(PROJECT_ROOT / "team_source"), calls[0]["arguments"])
         self.assertEqual(
@@ -217,6 +223,13 @@ class TeamValidationCommandTests(unittest.TestCase):
             with self.subTest(label=label):
                 self.assertIn(label, completed.stdout)
         self.assertIn("insufficient for official Tournament entry", completed.stdout)
+
+        for call in calls:
+            self.assertIn(catalog, call["arguments"])
+        self.assertNotIn(
+            str(PROJECT_ROOT / "language_environments"),
+            json.dumps(calls),
+        )
 
     def test_team_facing_diagnostics_name_each_failure_area(self) -> None:
         cases = (

@@ -226,6 +226,7 @@ class CrossPlatformProofTests(unittest.TestCase):
             'rps_runner.certification_cli',
             '"docker-execution-v1"',
             'core-tool.lock.json',
+            'materialize-core-tool',
             'eligibility-evidence.json',
             'validation-report.json',
             'cross-platform-proof.json',
@@ -235,6 +236,11 @@ class CrossPlatformProofTests(unittest.TestCase):
         for forbidden in ("qemu", "buildx", "docker pull", "docker push", "docker load"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, command.lower())
+        self.assertIn('catalog = options.core_path / lock["catalog"]["path"]', command)
+        self.assertNotIn(
+            'PROJECT_ROOT / "language_environments" / "catalog-v1" / "catalog.json"',
+            command,
+        )
 
     def test_runbook_preserves_diagnostic_and_repair_evidence(self) -> None:
         normalized = " ".join(RUNBOOK.read_text().split())

@@ -56,9 +56,12 @@ bundle identity. It contains no branch, abbreviated commit, version tag, or
 `latest` fallback.
 
 `core-tool.bundle` materializes the exact Runner commit without network access.
-The materializer rejects an existing destination unless it is a clean checkout
-of that commit. See the [catalog compatibility contract](CATALOG_COMPATIBILITY.md)
-for the release boundary and lock-update rules.
+Before validation begins, the materializer equality-checks the bundle identity,
+clean Runner commit, package version, catalog path, catalog identity, and every
+catalog asset identity. Local and GitHub Advisory Validation then read the
+catalog only from that verified Runner checkout. See the
+[catalog compatibility contract](CATALOG_COMPATIBILITY.md) for the release
+boundary and lock-update rules.
 
 The ownership boundary is deliberate:
 
@@ -71,8 +74,8 @@ The ownership boundary is deliberate:
 
 The current `language_environments/` tree is a temporary, non-authoritative
 mirror retained only during the staged catalog-consumer cutover. Its presence
-does not create a second catalog authority and it will be removed after active
-validation reads the materialized Runner catalog.
+does not create a second catalog authority. No active validation path reads it;
+it will be removed in the contraction step of the cutover.
 
 ## Verify a compatibility-lock change
 

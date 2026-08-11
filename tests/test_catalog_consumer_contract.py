@@ -158,6 +158,31 @@ class CatalogConsumerContractTests(unittest.TestCase):
             self.assertNotEqual(completed.returncode, 0)
             self.assertIn("not a clean checkout", completed.stderr)
 
+    def test_active_validation_paths_do_not_read_the_transitional_catalog(self) -> None:
+        local_catalog = 'ROOT / "language_environments"'
+        active_commands = (
+            PROJECT_ROOT / "validate-team",
+            PROJECT_ROOT / "prove-amd64-against-arm64",
+            PROJECT_ROOT / "tests" / "test_team_branch_template.py",
+        )
+        for path in active_commands:
+            with self.subTest(path=path.name):
+                source = path.read_text()
+                self.assertNotIn(local_catalog, source)
+                self.assertIn('["catalog"]["path"]', source)
+                self.assertIn("materialize-core-tool", source)
+
+        workflow = (
+            PROJECT_ROOT / ".github" / "workflows" / "team-advisory-validation.yml"
+        ).read_text()
+        self.assertIn(
+            "CATALOG: .core/rps-tournament/language_environments/catalog-v1/catalog.json",
+            workflow,
+        )
+        self.assertNotIn(
+            "CATALOG: language_environments/catalog-v1/catalog.json", workflow
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

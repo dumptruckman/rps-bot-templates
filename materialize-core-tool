@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import hashlib
-import json
 from pathlib import Path
 import subprocess
 import sys
 from typing import Sequence
+
+from catalog_compatibility import (
+    CompatibilityError,
+    read_lock,
+    verify_bundle,
+    verify_checkout,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -19,7 +24,13 @@ def run(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
 
 
 def fail(detail: str) -> int:
-    print("Pinned core tool materialization failure: " + detail, file=sys.stderr)
+    print(
+        "Pinned Catalog Release materialization failure: "
+        + detail
+        + ". Organizer action: restore the locked bundle and compatibility claim, "
+        "then rematerialize the Runner checkout.",
+        file=sys.stderr,
+    )
     return 1
 
 
@@ -32,32 +43,19 @@ def main() -> int:
     if len(sys.argv) > 2:
         return fail("usage: materialize-core-tool [destination]")
     try:
-        lock = json.loads(LOCK_PATH.read_text())
-        expected_identity = lock["offline_bundle"]["identity"]
+        lock = read_lock(LOCK_PATH)
         expected_commit = lock["runner"]["commit"]
-        actual_identity = (
-            "rps-runner-offline-bundle-v1@sha256:"
-            + hashlib.sha256(BUNDLE_PATH.read_bytes()).hexdigest()
-        )
-    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        verify_bundle(BUNDLE_PATH, lock)
+    except (OSError, KeyError, TypeError, CompatibilityError) as error:
         return fail(str(error))
-    if actual_identity != expected_identity:
-        return fail(
-            f"{BUNDLE_PATH.name} identity is {actual_identity}; expected {expected_identity}"
-        )
 
     if destination.exists():
-        head = run(["git", "-C", str(destination), "rev-parse", "HEAD"])
-        status = run(["git", "-C", str(destination), "status", "--porcelain"])
-        if (
-            head.returncode == 0
-            and head.stdout.strip() == expected_commit
-            and status.returncode == 0
-            and not status.stdout.strip()
-        ):
+        try:
+            verify_checkout(destination, lock)
             print(destination)
             return 0
-        return fail(f"existing destination is not a clean checkout of {expected_commit}")
+        except CompatibilityError as error:
+            return fail("existing destination is not a clean checkout: " + str(error))
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     cloned = run(["git", "clone", "--quiet", str(BUNDLE_PATH), str(destination)])
@@ -68,6 +66,10 @@ def main() -> int:
     )
     if checked_out.returncode != 0:
         return fail(checked_out.stderr.strip() or "bundled core commit is unavailable")
+    try:
+        verify_checkout(destination, lock)
+    except CompatibilityError as error:
+        return fail(str(error))
     print(destination)
     return 0
 

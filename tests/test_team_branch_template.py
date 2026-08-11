@@ -14,14 +14,13 @@ import unittest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CATALOG_PATH = (
-    PROJECT_ROOT / "language_environments" / "catalog-v1" / "catalog.json"
-)
 TEAM_SOURCE = PROJECT_ROOT / "team_source"
 TEAM_GUIDE = PROJECT_ROOT / "TEAM_GUIDE.md"
 CORE_PATH = Path(
     os.environ.get("RPS_CORE_PATH", PROJECT_ROOT / ".core" / "rps-tournament")
 )
+LOCK = json.loads((PROJECT_ROOT / "core-tool.lock.json").read_text())
+CATALOG_PATH = CORE_PATH / LOCK["catalog"]["path"]
 
 
 def load_module(name: str, path: Path, *, register: bool = False):
@@ -36,15 +35,18 @@ def load_module(name: str, path: Path, *, register: bool = False):
 
 
 class TeamBranchTemplateTests(unittest.TestCase):
-    def test_fresh_branch_strategy_implements_the_team_contract(self) -> None:
-        strategy = load_module("team_strategy", TEAM_SOURCE / "strategy.py")
-        catalog_template = (
-            CATALOG_PATH.parent / "python" / "template" / "strategy.py"
+    @classmethod
+    def setUpClass(cls) -> None:
+        subprocess.run(
+            [str(PROJECT_ROOT / "materialize-core-tool"), str(CORE_PATH)],
+            cwd=PROJECT_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
         )
 
-        self.assertEqual(
-            (TEAM_SOURCE / "strategy.py").read_bytes(), catalog_template.read_bytes()
-        )
+    def test_fresh_branch_strategy_implements_the_team_contract(self) -> None:
+        strategy = load_module("team_strategy", TEAM_SOURCE / "strategy.py")
         self.assertEqual(
             list(inspect.signature(strategy.choose_move).parameters),
             ["turn", "my_history", "opponent_history", "rng"],

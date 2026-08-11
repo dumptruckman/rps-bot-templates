@@ -22,6 +22,15 @@ version, path, catalog identity, asset identity, or bundle identity is a
 different Catalog Release and must be rejected. Branches, abbreviated commits,
 mutable tags, and `latest` values are not compatibility coordinates.
 
+`materialize-core-tool` performs those equality checks before returning a
+catalog path. It verifies the offline bundle before cloning, then verifies the
+clean checkout, installed-package metadata, canonical catalog content, and each
+referenced asset. Its failures identify the mismatched coordinate and direct the
+organizer to restore the locked release inputs. `validate-team`, GitHub Advisory
+Validation, wrapper smoke tests, and the native cross-platform proof consume
+only the catalog inside that materialized checkout; the transitional local copy
+is not a fallback.
+
 The dependency is one-way. This repository may materialize the locked Runner
 offline to provide Advisory Validation, but the Runner never consumes a Team
 Template or Template Release. Final Validation independently uses the

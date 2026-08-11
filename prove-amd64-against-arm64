@@ -12,9 +12,9 @@ import subprocess
 import sys
 from typing import Any, Mapping, Sequence
 
+from catalog_compatibility import read_lock
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-CATALOG = PROJECT_ROOT / "language_environments" / "catalog-v1" / "catalog.json"
 CORE_LOCK = PROJECT_ROOT / "core-tool.lock.json"
 AMD64 = "linux/amd64"
 ARM64 = "linux/arm64"
@@ -339,6 +339,16 @@ def _run(options: argparse.Namespace) -> None:
         raise ValueError("output already exists and will not be replaced")
     if not options.source.is_dir():
         raise ValueError("selected Team Source must be a directory")
+    materialized = subprocess.run(
+        [str(PROJECT_ROOT / "materialize-core-tool"), str(options.core_path)],
+        capture_output=True,
+        text=True,
+    )
+    if materialized.returncode != 0:
+        raise ValueError(materialized.stderr.strip() or materialized.stdout.strip())
+    lock = read_lock(CORE_LOCK)
+    catalog = options.core_path / lock["catalog"]["path"]
+
     eligibility_path = options.advisory_evidence / "eligibility-evidence.json"
     advisory_report_path = options.advisory_evidence / "validation-report.json"
     eligibility = _read_object(eligibility_path, "eligibility evidence")
@@ -348,15 +358,6 @@ def _run(options: argparse.Namespace) -> None:
         eligibility=eligibility,
         advisory_report=advisory_report,
     )
-
-    lock = _read_object(CORE_LOCK, "core tool lock")
-    core_commit = subprocess.run(
-        ["git", "-C", str(options.core_path), "rev-parse", "HEAD"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    _expect(core_commit, lock.get("commit"), "pinned core commit")
     docker_platform = subprocess.run(
         ["docker", "version", "--format", "{{.Server.Os}}/{{.Server.Arch}}"],
         check=True,
@@ -387,7 +388,7 @@ def _run(options: argparse.Namespace) -> None:
             "-m",
             "rps_runner.source_cli",
             "--catalog",
-            str(CATALOG),
+            str(catalog),
             "--environment",
             "python",
             "--source",
@@ -415,7 +416,7 @@ def _run(options: argparse.Namespace) -> None:
             "-m",
             "rps_runner.artifact_cli",
             "--catalog",
-            str(CATALOG),
+            str(catalog),
             "--bundle",
             str(bundle),
             "--platform",
@@ -432,7 +433,7 @@ def _run(options: argparse.Namespace) -> None:
             "-m",
             "rps_runner.certification_cli",
             "--catalog",
-            str(CATALOG),
+            str(catalog),
             "--candidate",
             str(candidate),
             "--mode",

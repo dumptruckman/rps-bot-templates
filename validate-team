@@ -14,7 +14,6 @@ from typing import Mapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parent
-CATALOG = ROOT / "language_environments" / "catalog-v1" / "catalog.json"
 TEAM_SOURCE = ROOT / "team_source"
 PROFILE = "docker-execution-v1"
 
@@ -160,51 +159,10 @@ def main() -> int:
         if configured_core
         else ROOT / ".core" / "rps-tournament"
     )
-    if not configured_core and not core.exists():
-        materialized = run(
-            [str(ROOT / "materialize-core-tool"), str(core)], timeout=30
-        )
-        if materialized.returncode != 0:
-            return fail("Pinned core tool", materialized.stderr or materialized.stdout)
-    try:
-        checkout = run(["git", "-C", str(core), "rev-parse", "HEAD"])
-    except (OSError, subprocess.TimeoutExpired) as error:
-        return fail("Pinned core tool", str(error))
-    observed_commit = checkout.stdout.strip()
-    if checkout.returncode != 0 or observed_commit != locked_commit:
-        detail = (
-            "expected checkout "
-            + locked_commit
-            + " at "
-            + str(core)
-            + "; observed "
-            + (observed_commit or checkout.stderr.strip() or "no checkout")
-        )
-        return fail("Pinned core tool", detail)
-    try:
-        core_status = run(
-            [
-                "git",
-                "-C",
-                str(core),
-                "status",
-                "--porcelain",
-                "--untracked-files=no",
-                "--",
-                "rps_runner",
-                "setup.cfg",
-                "pyproject.toml",
-            ]
-        )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        return fail("Pinned core tool", str(error))
-    if core_status.returncode != 0 or core_status.stdout.strip():
-        return fail(
-            "Pinned core tool",
-            "the locked checkout has tracked modifications; restore commit "
-            + locked_commit,
-        )
-
+    materialized = run([str(ROOT / "materialize-core-tool"), str(core)], timeout=30)
+    if materialized.returncode != 0:
+        return fail("Pinned core tool", materialized.stderr or materialized.stdout)
+    catalog = core / str(lock["catalog"]["path"])
     try:
         host = run(
             [
@@ -236,7 +194,7 @@ def main() -> int:
                 "source_cli",
                 (
                     "--catalog",
-                    str(CATALOG),
+                    str(catalog),
                     "--environment",
                     "python",
                     "--source",
@@ -250,7 +208,7 @@ def main() -> int:
                 "artifact_cli",
                 (
                     "--catalog",
-                    str(CATALOG),
+                    str(catalog),
                     "--bundle",
                     str(bundle),
                     "--platform",
@@ -264,7 +222,7 @@ def main() -> int:
                 "certification_cli",
                 (
                     "--catalog",
-                    str(CATALOG),
+                    str(catalog),
                     "--candidate",
                     str(candidate),
                     "--mode",

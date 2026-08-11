@@ -76,15 +76,15 @@ With a local Docker engine running, validate the current `team_source/` with:
 ./validate-team
 ```
 
-The command uses the compatibility claim in `core-tool.lock.json`. On first use
-it verifies the content-addressed `core-tool.bundle` and materializes the exact
-Runner commit under `.core/rps-tournament`; it does not download packages or
-clone a private repository. A maintainer may set `RPS_CORE_PATH` to an
-equivalent exact clean checkout. The lock identifies the Runner-owned Catalog
-Release used for compatibility, including its package version, catalog path and
-identity, asset identities, and offline bundle identity. The pinned base runtime
-for your Docker server's native `linux/amd64` or `linux/arm64` platform must
-already be present in that Docker context.
+The command uses the compatibility claim in `core-tool.lock.json`. On every use
+it verifies the content-addressed `core-tool.bundle`, exact clean Runner commit,
+package version, catalog path, catalog identity, and all catalog asset
+identities. It materializes the Runner under `.core/rps-tournament` on first use
+without downloading packages or cloning a private repository, then reads the
+catalog from that verified checkout. A maintainer may set `RPS_CORE_PATH` to an
+equivalent exact clean checkout; the same verification still applies. The
+pinned base runtime for your Docker server's native `linux/amd64` or
+`linux/arm64` platform must already be present in that Docker context.
 
 The command validates and freezes Team Source, builds one confidence image for
 the Docker server's native platform, runs the participant-local conformance
@@ -94,8 +94,9 @@ determinism, isolation, resource, lifecycle, and Docker-host failures are
 reported separately.
 
 GitHub automatically checks every commit pushed to a `team/**` branch on native
-Linux/AMD64. The check uses the exact source commit, frozen catalog, and pinned
-core tool; it builds one disposable `linux/amd64` confidence image and never
+Linux/AMD64. The check materializes the bundled Runner, verifies the complete
+locked Catalog Release, and uses only its catalog while checking the exact
+source commit. It builds one disposable `linux/amd64` confidence image and never
 publishes that image. A practice Match proves protocol compatibility, but its
 score or winner does not affect whether an otherwise conforming Submission
 Candidate passes.

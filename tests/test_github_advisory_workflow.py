@@ -31,7 +31,7 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
     def test_pinned_core_owns_the_frozen_catalog_build_and_advisory_conformance(self) -> None:
         workflow = self.workflow
 
-        catalog = "language_environments/catalog-v1/catalog.json"
+        catalog = ".core/rps-tournament/language_environments/catalog-v1/catalog.json"
         self.assertIn("PYTHONPATH: .core/rps-tournament", workflow)
         self.assertIn("python3 -m rps_runner.source_cli", workflow)
         self.assertIn("--source team_source", workflow)
@@ -42,6 +42,9 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         self.assertIn("--platform \"$PLATFORM\"", workflow)
         self.assertIn("--profile docker-execution-v1", workflow)
         self.assertIn("CATALOG: " + catalog, workflow)
+        self.assertNotIn(
+            "CATALOG: language_environments/catalog-v1/catalog.json", workflow
+        )
 
     def test_ephemeral_runner_fetches_only_the_catalog_pinned_base_runtime(self) -> None:
         workflow = self.workflow

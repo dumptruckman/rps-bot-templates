@@ -16,8 +16,11 @@ exact selected Team Source as that runbook directs; do not bring the GitHub
 image into the organizer Docker context.
 
 On the organizer's native ARM64 machine, check out this repository release and
-the core commit in `core-tool.lock.json`. The active Docker server must report
-`linux/arm64`, and the catalog's pinned ARM64 runtime must already be present.
+run `./materialize-core-tool` unless its locked Runner checkout is already
+present. The proof verifies the bundle and full Catalog Release coordinates
+again before using the catalog in that checkout. The active Docker server must
+report `linux/arm64`, and the catalog's pinned ARM64 runtime must already be
+present.
 Run, using the selected full Git commit and new output path:
 
 ```sh
