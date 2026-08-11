@@ -1,7 +1,13 @@
-# Freeze and release a Language Environment Catalog
+# Legacy Template-repository catalog release procedure
 
-The organizer publishes one immutable Language Environment Catalog release
-before Team coding begins.
+> Superseded authority: `rps-tournament` now owns the Language Environment
+> Catalog and publishes every new Catalog Release. This procedure is retained
+> temporarily as migration evidence while the duplicate catalog and release
+> tooling are removed. Running it does not establish this repository as catalog
+> authority.
+
+Historically, the organizer published one immutable Language Environment
+Catalog release from this repository before Team coding began.
 For the first Tournament, the release tag is `catalog-v1`. It points at one exact
 repository commit and its annotated tag message is the machine-readable
 `catalog-release-v1` manifest. The manifest records the catalog, pinned core,

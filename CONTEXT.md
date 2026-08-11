@@ -27,15 +27,32 @@ Artifact.
 _Avoid_: Bot Artifact, winning submission
 
 **Language Environment**:
-A versioned organizer-owned package containing the Team Source schema, template,
-platform runtimes, build recipe, wrapper, Seed Adapter, readiness behavior,
-entrypoint, and conformance fixtures for one supported language.
-_Avoid_: Runtime, Team branch, Docker image
+A versioned organizer-owned adapter package in the Language Environment Catalog
+that defines the Team Source schema, wrapper, Seed Adapter, pinned runtimes,
+networkless build recipe, readiness contract, entrypoint, and conformance
+fixtures for one supported language.
+_Avoid_: Team Template, participant repository, runtime image
 
 **Language Environment Catalog**:
-The immutable event-facing collection of supported Language Environments frozen
-before Team coding begins.
+The Runner-owned collection of supported Language Environments.
 _Avoid_: Dependency registry, mutable latest catalog
+
+**Team Template**:
+A participant-facing starter project maintained in this repository that adapts
+one Language Environment for Team coding and claims compatibility with one exact
+Catalog Release.
+_Avoid_: Language Environment, catalog fixture, official wrapper
+
+**Template Release**:
+An immutable publication of a Team Template that records its own identity and
+an exact Catalog Release compatibility claim.
+_Avoid_: Catalog Release, mutable branch, latest template
+
+**Catalog Release**:
+An immutable publication of the Runner-owned Language Environment Catalog and
+its assets, identified by an exact Runner commit, package version, catalog path
+and content identity, and offline bundle identity.
+_Avoid_: Template Release, catalog branch, latest catalog
 
 **Bot Artifact**:
 The immutable, single-platform container image built and accepted by the
@@ -44,14 +61,16 @@ confidence artifacts only.
 _Avoid_: Team Source, submission, Team
 
 **Advisory Validation**:
-Compatibility evidence from participant-local or GitHub/AMD64 execution of the
-versioned core conformance suite. It cannot authorize Tournament entry.
-_Avoid_: Final Validation, official build
+A compatibility check performed before organizer acceptance, such as Team-local
+or CI validation, that provides feedback but cannot authorize a Bot Artifact for
+a Tournament.
+_Avoid_: Final Validation, official certification, roster acceptance
 
 **Final Validation**:
-The organizer's authoritative local ARM64 build and conformance result for the
-exact selected Team Source and frozen Language Environment Catalog.
-_Avoid_: GitHub check, advisory validation
+The organizer-controlled, authoritative validation of selected Team Source
+against the exact Catalog Release and official target platform; only its result
+can authorize the resulting Bot Artifact for a Tournament roster.
+_Avoid_: Advisory Validation, CI check, Team-built image
 
 **Source Digest**:
 The deterministic identity of validated Team Source contents, independent of a

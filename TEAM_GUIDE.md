@@ -11,11 +11,13 @@ changing how it chooses moves.
 file inside that directory. Do not edit or replace files elsewhere in this
 repository, even if Git permits it.
 
-The starter is copied from the catalog's canonical Python template. Contract
-tests deliberately keep the two initial files identical; after the organizer
-creates Team branches, each Team changes only its `team_source/` copy.
+The starter is the participant-facing Python Team Template. It claims
+compatibility with the exact Catalog Release in `core-tool.lock.json`; it is not
+a catalog-owned execution asset. After the organizer creates Team branches,
+each Team changes only its `team_source/` copy.
 
-The organizer owns everything outside `team_source/`, including:
+The organizer controls everything outside `team_source/`. The authoritative
+versions of these execution assets are owned by `rps-tournament`, including:
 
 - the wrapper (`wrapper.py`), build recipe (`Dockerfile`), fixed entrypoint,
   and dependency definition (`requirements.lock`);
@@ -23,9 +25,10 @@ The organizer owns everything outside `team_source/`, including:
 - Language Environment Catalog metadata such as `catalog.json`; and
 - readiness, runtime, conformance, and other Tournament integration files.
 
-These files define the frozen Python Language Environment. Changes to them are
-not Team Source and will not be accepted as part of a Submission Candidate.
-Third-party Python packages are not available; use Python's standard library.
+Local copies retained during the catalog-consumer cutover are not a second
+authority. Organizer-owned paths are never part of Team Source and changes to
+them will not be accepted as part of a Submission Candidate. Third-party Python
+packages are not available; use Python's standard library.
 
 ## Strategy contract
 
@@ -73,13 +76,15 @@ With a local Docker engine running, validate the current `team_source/` with:
 ./validate-team
 ```
 
-The command uses the repository's frozen Language Environment Catalog and the
-exact core-tool commit in `core-tool.lock.json`. On first use it verifies the
-content-addressed `core-tool.bundle` and materializes that exact commit under
-`.core/rps-tournament`; it does not download packages or clone a private
-repository. A maintainer may set `RPS_CORE_PATH` to an equivalent exact clean
-checkout. The pinned base runtime for your Docker server's native `linux/amd64`
-or `linux/arm64` platform must already be present in that Docker context.
+The command uses the compatibility claim in `core-tool.lock.json`. On first use
+it verifies the content-addressed `core-tool.bundle` and materializes the exact
+Runner commit under `.core/rps-tournament`; it does not download packages or
+clone a private repository. A maintainer may set `RPS_CORE_PATH` to an
+equivalent exact clean checkout. The lock identifies the Runner-owned Catalog
+Release used for compatibility, including its package version, catalog path and
+identity, asset identities, and offline bundle identity. The pinned base runtime
+for your Docker server's native `linux/amd64` or `linux/arm64` platform must
+already be present in that Docker context.
 
 The command validates and freezes Team Source, builds one confidence image for
 the Docker server's native platform, runs the participant-local conformance

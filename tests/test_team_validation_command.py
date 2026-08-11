@@ -161,7 +161,7 @@ class TeamValidationCommandTests(unittest.TestCase):
             {
                 "PATH": str(self.bin) + os.pathsep + process_environment["PATH"],
                 "RPS_CORE_PATH": str(self.core),
-                "RPS_TEST_CORE_COMMIT": LOCK["commit"],
+            "RPS_TEST_CORE_COMMIT": LOCK["runner"]["commit"],
                 "RPS_TEST_LOG": str(self.log),
             }
         )
@@ -269,7 +269,7 @@ class TeamValidationCommandTests(unittest.TestCase):
 
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("Pinned core tool failure", completed.stderr)
-        self.assertIn(LOCK["commit"], completed.stderr)
+        self.assertIn(LOCK["runner"]["commit"], completed.stderr)
         self.assertFalse(self.log.exists())
 
     def test_modified_core_checkout_is_rejected_before_team_source_is_touched(self) -> None:

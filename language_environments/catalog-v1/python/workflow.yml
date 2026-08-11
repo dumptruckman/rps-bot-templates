@@ -17,8 +17,8 @@ jobs:
           import json
           with open("core-tool.lock.json") as stream:
               lock = json.load(stream)
-          print("repository=" + lock["repository"])
-          print("commit=" + lock["commit"])
+          print("repository=" + lock["runner"]["repository"])
+          print("commit=" + lock["runner"]["commit"])
           PY
       - name: Check out pinned Tournament core
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683

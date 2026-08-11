@@ -32,15 +32,19 @@ def main() -> int:
         return fail("usage: materialize-core-tool [destination]")
     try:
         lock = json.loads(LOCK_PATH.read_text())
-        bundle = ROOT / lock["bundle"]["path"]
-        expected_digest = lock["bundle"]["sha256"]
-        expected_commit = lock["commit"]
-        actual_digest = "sha256:" + hashlib.sha256(bundle.read_bytes()).hexdigest()
+        bundle_record = lock["offline_bundle"]
+        bundle = ROOT / bundle_record["path"]
+        expected_identity = bundle_record["identity"]
+        expected_commit = lock["runner"]["commit"]
+        actual_identity = (
+            "rps-runner-offline-bundle-v1@sha256:"
+            + hashlib.sha256(bundle.read_bytes()).hexdigest()
+        )
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         return fail(str(error))
-    if actual_digest != expected_digest:
+    if actual_identity != expected_identity:
         return fail(
-            f"{bundle.name} digest is {actual_digest}; expected {expected_digest}"
+            f"{bundle.name} identity is {actual_identity}; expected {expected_identity}"
         )
 
     if destination.exists():

@@ -1,22 +1,20 @@
 # RPS Bot Templates
 
-This repository will be the Team-facing source of truth for the Rock–Paper–
-Scissors Tournament's Language Environment catalog, Team templates,
-organizer-owned wrappers and build recipes, Team smoke-test commands, and
-GitHub Advisory Validation.
+This repository is authoritative for Team Templates and participant-facing Team
+guidance for the Rock–Paper–Scissors Tournament. It publishes starter Team
+Source and the local and GitHub commands through which Teams receive Advisory
+Validation.
 
-The `rps-tournament` repository remains authoritative for the generic source
-validator, builder, conformance suite, container executor, and official
-Tournament workflow. This repository ships a content-addressed Git bundle of
-the exact locked core commit so a clean clone can consume that tooling without
-network access; it does not reimplement it.
-
-Initial implementation work is tracked as numbered issues under
-`.scratch/companion-repository/issues/`.
+`rps-tournament` is authoritative for the Language Environment Catalog and all
+organizer-owned execution assets: Team Source schemas, wrappers, Seed Adapters,
+pinned runtimes, build recipes, readiness contracts, entrypoints, and
+conformance fixtures. It also owns validation, building, certification,
+execution, and official Tournament operation. This repository consumes one
+exact Catalog Release; it does not redefine those assets.
 
 ## Team branches
 
-A fresh Team branch is ready to edit: its working strategy is
+A fresh Team branch starts from the Python Team Template. Its working strategy is
 [`team_source/strategy.py`](team_source/strategy.py). Teams must change only
 Team Source under `team_source/`; the catalog and its build, wrapper, workflow,
 and protocol assets remain organizer-owned. See the [Team guide](TEAM_GUIDE.md)
@@ -44,37 +42,39 @@ Submission Candidate on the organizer's native ARM64 machine, runs canonical
 Final Validation, and retains a contract comparison against its GitHub Advisory
 Validation evidence without conflating the two platform-specific images.
 
-The [Language Environment Catalog release runbook](CATALOG_RELEASE.md) freezes
-all catalog, core, suite, profile, wrapper, recipe, dependency, action, and
-platform-runtime identities into an annotated tag before Team coding begins. It
-also gives Teams a clean-clone reproduction path and maintainers the until-
-completion freeze policy.
+The [legacy catalog release runbook](CATALOG_RELEASE.md) documents the
+pre-cutover release procedure while its duplicate assets remain in this
+repository. New Catalog Releases belong to `rps-tournament`.
 
-## Immutable contract
+## Immutable compatibility contract
 
-The authoritative Language Environment Catalog is
-`language_environments/catalog-v1/catalog.json`, with catalog version
-`rps-language-environment-catalog-v1`. The generic core consumer is locked by
-full commit, package version, and bundled-history digest in
-`core-tool.lock.json`. Active workflows materialize that exact commit from
-`core-tool.bundle` and pin third-party actions by full commit; they do not
-resolve a branch, version tag, or `latest` value.
+[`core-tool.lock.json`](core-tool.lock.json) is the compatibility claim for this
+Team Template. It identifies exactly one published Runner Catalog Release by a
+full Runner commit, exact package version, repository-relative catalog path,
+catalog content identity, complete catalog asset identity map, and offline
+bundle identity. It contains no branch, abbreviated commit, version tag, or
+`latest` fallback.
 
-The catalog owns the Python Team Source schema and template, platform runtime
-digests, networkless build recipe, wrapper and Seed Adapter, readiness contract,
-entrypoint, standard-library-only dependency policy, and conformance fixtures.
-Every organizer-owned asset is content-addressed from the catalog. The template
-digest is sealed by the content-addressed conformance definition.
+`core-tool.bundle` materializes the exact Runner commit without network access.
+The materializer rejects an existing destination unless it is a clean checkout
+of that commit. See the [catalog compatibility contract](CATALOG_COMPATIBILITY.md)
+for the release boundary and lock-update rules.
 
 The ownership boundary is deliberate:
 
-- This repository is authoritative for the Tournament-facing Language Environment
-  Catalog and all assets it names.
-- `rps-tournament` is authoritative for generic source validation, building,
-  certification, execution, scheduling, scoring, state, storage, projections,
-  and official Tournament operation.
+- This repository owns the Team Template under `team_source/`, Team instructions,
+  Advisory Validation entrypoints, and future Template Releases.
+- `rps-tournament` owns every Language Environment and Catalog Release, including
+  all organizer-controlled execution assets.
+- Teams edit only `team_source/`. Organizer-owned paths are never Team Source,
+  even when a transition copy is present here.
 
-## Verify a catalog or core-pin change
+The current `language_environments/` tree is a temporary, non-authoritative
+mirror retained only during the staged catalog-consumer cutover. Its presence
+does not create a second catalog authority and it will be removed after active
+validation reads the materialized Runner catalog.
+
+## Verify a compatibility-lock change
 
 Materialize the locked core commit from the repository-owned bundle, then run:
 
@@ -83,8 +83,7 @@ Materialize the locked core commit from the repository-owned bundle, then run:
 python3 -m unittest discover -s tests -v
 ```
 
-An asset edit intentionally fails until its SHA-256 entry is updated. A template
-edit also requires updating `template_sha256` in `python/conformance.json`, then
-updating the conformance asset digest in `catalog.json`. A core-pin change fails
-unless the exact locked checkout's package version, generic fixture, and Team
-contract still match.
+Change the lock only by copying every coordinate from a published Runner Catalog
+Release and replacing the offline bundle with the bytes named by that release.
+Tests reject a mismatched Runner commit, package version, catalog identity, asset
+map, or bundle identity.

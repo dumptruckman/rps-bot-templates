@@ -107,7 +107,7 @@ class CatalogReleaseTests(unittest.TestCase):
         self.assertEqual(
             manifest["catalog"]["identity"],
             "rps-language-environment-catalog-v1@sha256:"
-            "738095aa5d757a1eea34f966c111d64e11b18fb30e011707ebf2fe0b2beaa9ec",
+            "11deb016fdcef5f7a49565d688f536f5bb516f84ee9f8973547ad2fe5a03ae4e",
         )
         self.assertEqual(manifest["core_tool"]["pin"], CORE_LOCK)
         self.assertEqual(
@@ -184,7 +184,7 @@ class CatalogReleaseTests(unittest.TestCase):
         core_repository = self.make_release_repository("-core")
         core_lock = core_repository / "core-tool.lock.json"
         core = json.loads(core_lock.read_text())
-        core["commit"] = "main"
+        core["runner"]["commit"] = "main"
         core_lock.write_text(json.dumps(core, indent=2) + "\n")
         cases["core"] = (core_repository, "full 40-character commit")
 

@@ -148,7 +148,7 @@ def make_writable(root: Path) -> None:
 def main() -> int:
     try:
         lock = read_object(ROOT / "core-tool.lock.json")
-        locked_commit = lock["commit"]
+        locked_commit = lock["runner"]["commit"]
         if not isinstance(locked_commit, str):
             raise ValueError("core lock commit is not a string")
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:

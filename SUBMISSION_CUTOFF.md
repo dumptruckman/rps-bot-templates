@@ -61,7 +61,8 @@ git -C selected-team archive --format=tar \
 The reported `HEAD` must equal the selection record's `source_commit`. Export
 only `team_source/`; do not use a catalog, wrapper, workflow, recipe, or core
 lock taken from a Team branch. The organizer-controlled Tournament release
-checkout supplies the frozen catalog and `core-tool.lock.json`.
+checkout supplies `core-tool.lock.json`; the exact materialized Runner checkout
+named by that lock is the authority for the frozen Catalog Release.
 
 Check out the exact core commit named by that lock and make it importable as the
 pinned core's documentation directs. Then pass the exported local directory to

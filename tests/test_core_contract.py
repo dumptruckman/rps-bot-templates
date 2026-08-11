@@ -41,16 +41,17 @@ class ImmutableCoreContractTests(unittest.TestCase):
 
     def test_core_and_catalog_versions_are_explicit_and_immutable(self) -> None:
         lock = json.loads(CORE_LOCK.read_text())
-        self.assertRegex(lock["commit"], FULL_COMMIT)
-        self.assertEqual(lock["package_version"], "0.1.0")
-        self.assertRegex(lock["repository"], r"^[^/\s]+/[^/\s]+$")
-        self.assertEqual(lock["bundle"]["path"], "core-tool.bundle")
-        self.assertRegex(lock["bundle"]["sha256"], FULL_SHA256)
+        runner = lock["runner"]
+        offline_bundle = lock["offline_bundle"]
+        self.assertRegex(runner["commit"], FULL_COMMIT)
+        self.assertEqual(runner["package_version"], "0.1.0")
+        self.assertRegex(runner["repository"], r"^[^/\s]+/[^/\s]+$")
+        self.assertEqual(offline_bundle["path"], "core-tool.bundle")
         self.assertEqual(
-            lock["bundle"]["sha256"],
-            "sha256:"
+            offline_bundle["identity"],
+            "rps-runner-offline-bundle-v1@sha256:"
             + hashlib.sha256(
-                (PROJECT_ROOT / lock["bundle"]["path"]).read_bytes()
+                (PROJECT_ROOT / offline_bundle["path"]).read_bytes()
             ).hexdigest(),
         )
 
@@ -60,10 +61,10 @@ class ImmutableCoreContractTests(unittest.TestCase):
             capture_output=True,
             text=True,
         ).stdout.strip()
-        self.assertEqual(checked_out_commit, lock["commit"])
+        self.assertEqual(checked_out_commit, runner["commit"])
         package = configparser.ConfigParser()
         package.read(CORE_PATH / "setup.cfg")
-        self.assertEqual(package["metadata"]["version"], lock["package_version"])
+        self.assertEqual(package["metadata"]["version"], runner["package_version"])
 
         catalog = self.catalog_data()
         self.assertEqual(
@@ -91,8 +92,8 @@ class ImmutableCoreContractTests(unittest.TestCase):
             self.assertNotRegex(workflow, r"uses:\s+[^\s]+@v\d+")
             self.assertNotIn("secrets.", workflow)
             if workflow_path == CATALOG.parent / "python" / "workflow.yml":
-                self.assertIn("lock[\"repository\"]", workflow)
-                self.assertIn("lock[\"commit\"]", workflow)
+                self.assertIn("lock[\"runner\"][\"repository\"]", workflow)
+                self.assertIn("lock[\"runner\"][\"commit\"]", workflow)
                 self.assertIn("ref: ${{ steps.core_lock.outputs.commit }}", workflow)
             else:
                 self.assertIn("./materialize-core-tool .core/rps-tournament", workflow)

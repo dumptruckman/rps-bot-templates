@@ -16,10 +16,11 @@ LOCK_PATH = PROJECT_ROOT / "core-tool.lock.json"
 class BundledCoreToolTests(unittest.TestCase):
     def test_clean_clone_materializes_the_exact_core_commit_without_network(self) -> None:
         lock = json.loads(LOCK_PATH.read_text())
-        bundle = PROJECT_ROOT / lock["bundle"]["path"]
+        bundle = PROJECT_ROOT / lock["offline_bundle"]["path"]
         self.assertEqual(
-            "sha256:" + hashlib.sha256(bundle.read_bytes()).hexdigest(),
-            lock["bundle"]["sha256"],
+            "rps-runner-offline-bundle-v1@sha256:"
+            + hashlib.sha256(bundle.read_bytes()).hexdigest(),
+            lock["offline_bundle"]["identity"],
         )
 
         with tempfile.TemporaryDirectory() as directory:
@@ -39,7 +40,7 @@ class BundledCoreToolTests(unittest.TestCase):
                     capture_output=True,
                     text=True,
                 ).stdout.strip(),
-                lock["commit"],
+                lock["runner"]["commit"],
             )
             self.assertEqual(
                 subprocess.run(

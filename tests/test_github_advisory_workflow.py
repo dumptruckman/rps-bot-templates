@@ -21,7 +21,7 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn('runs-on: ubuntu-24.04', workflow)
         self.assertIn('PLATFORM: linux/amd64', workflow)
-        self.assertIn('lock["commit"]', workflow)
+        self.assertIn('lock["runner"]["commit"]', workflow)
         self.assertIn("./materialize-core-tool .core/rps-tournament", workflow)
         self.assertNotIn("repository: ${{", workflow)
         self.assertNotIn("qemu", workflow.lower())

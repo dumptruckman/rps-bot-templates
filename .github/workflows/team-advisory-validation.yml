@@ -33,7 +33,7 @@ jobs:
           import json
           with open("core-tool.lock.json") as stream:
               lock = json.load(stream)
-          print("commit=" + lock["commit"])
+          print("commit=" + lock["runner"]["commit"])
           PY
       - name: Verify native Linux/AMD64 Docker
         run: |
