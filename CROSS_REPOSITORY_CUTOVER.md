@@ -33,6 +33,7 @@ From the clean Template Release checkout, run:
 
 ```sh
 ./prove-cross-repository-cutover \
+  --template <language-id> \
   --runner-evidence <catalog-independence-evidence.json> \
   --advisory-evidence <downloaded-team-advisory-artifact> \
   --source <exported-selected-team-source> \

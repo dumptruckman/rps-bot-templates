@@ -25,6 +25,7 @@ Run, using the selected full Git commit and new output path:
 
 ```sh
 ./prove-amd64-against-arm64 \
+  --template <language-id> \
   --advisory-evidence <downloaded-team-advisory-artifact> \
   --source <exported-team-source> \
   --selected-commit <40-character-commit> \

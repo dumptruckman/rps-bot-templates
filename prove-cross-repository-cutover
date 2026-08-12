@@ -15,11 +15,11 @@ import sys
 from typing import Any, Mapping, Sequence
 
 from catalog_compatibility import read_lock, verify_independence_evidence
+from template_collection import CollectionError, load_collection
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 CORE_LOCK = PROJECT_ROOT / "core-tool.lock.json"
-DESCRIPTOR = PROJECT_ROOT / "team-template.json"
 AMD64 = "linux/amd64"
 ARM64 = "linux/arm64"
 SHA256_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -473,10 +473,19 @@ def _run(options: argparse.Namespace) -> None:
     catalog = core / lock["catalog"]["path"]
     environment = _environment(core)
 
-    descriptor = _read_object(DESCRIPTOR, "Team Template descriptor")
-    release_tag = options.template_release or str(descriptor.get("release_tag", ""))
+    try:
+        template = load_collection(PROJECT_ROOT, catalog).select(options.template)
+    except CollectionError as error:
+        raise ValueError("Team Template selection failed: " + str(error)) from error
+    release_tag = options.template_release or template.release_tag
     verified = subprocess.run(
-        [str(PROJECT_ROOT / "release-team-template"), "verify", release_tag],
+        [
+            str(PROJECT_ROOT / "release-team-template"),
+            "--template",
+            template.language_id,
+            "verify",
+            release_tag,
+        ],
         cwd=PROJECT_ROOT,
         env=dict(environment),
         capture_output=True,
@@ -548,11 +557,18 @@ def _run(options: argparse.Namespace) -> None:
     core = offline_core.resolve()
     catalog = core / lock["catalog"]["path"]
     environment = _environment(core)
-    descriptor = _read_object(
-        offline_template / "team-template.json", "clean-clone Team Template descriptor"
-    )
+    try:
+        template = load_collection(offline_template, catalog).select(options.template)
+    except CollectionError as error:
+        raise ValueError("clean-clone Team Template selection failed: " + str(error)) from error
     reproduced = subprocess.run(
-        (str(offline_template / "release-team-template"), "verify", release_tag),
+        (
+            str(offline_template / "release-team-template"),
+            "--template",
+            template.language_id,
+            "verify",
+            release_tag,
+        ),
         cwd=offline_template,
         env=dict(environment),
         capture_output=True,
@@ -590,9 +606,9 @@ def _run(options: argparse.Namespace) -> None:
             "--catalog",
             str(catalog),
             "--environment",
-            "python",
+            template.language_environment,
             "--source",
-            str(offline_template / str(descriptor["path"])),
+            str(offline_template / template.team_source_path),
             "--bundle",
             str(starter_bundle_path),
         ),
@@ -606,6 +622,8 @@ def _run(options: argparse.Namespace) -> None:
         "prove-native-platforms",
         (
             str(offline_template / "prove-amd64-against-arm64"),
+            "--template",
+            template.language_id,
             "--advisory-evidence",
             str(options.advisory_evidence),
             "--source",
@@ -755,6 +773,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--selected-commit", required=True)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--template", required=True, metavar="LANGUAGE_ID")
     parser.add_argument("--template-release")
     parser.add_argument(
         "--core-path",

@@ -15,6 +15,7 @@ inside that directory and place optional `.csv`, `.json`, or `.txt` data below
 Do not add dependency manifests, wrappers, Dockerfiles, entrypoints, workflows,
 or catalog files to Team Source. Runner-owned examples include `wrapper.py`,
 `Dockerfile`, `requirements.lock`, `.github` workflows, and `catalog.json`.
+Organizer-owned paths are never part of Team Source.
 Python Team Source is standard-library-only and is limited to 64 files, 256 KiB
 per file, and 1 MiB total.
 
@@ -88,3 +89,7 @@ Template Release. A published release is immutable; compatibility updates use a
 new Python Template Release identity. Use the assigned `team/<team-slug>` name
 and keep one branch per Team. Shared branch visibility does not provide
 submission secrecy; do not inspect or copy another Team's strategy.
+
+The [submission cutoff and manual handoff policy](../../SUBMISSION_CUTOFF.md)
+defines how the organizer selects an eligible commit and exports the exact Team
+Source for Final Validation.

@@ -1,38 +1,25 @@
 # Publishing a Template Release
 
-A Template Release is the immutable participant-facing starting point for Team
-coding. Its JSON manifest is the annotation on an annotated Git tag. The
-manifest records the exact Template repository commit, Team Template digest,
-expected starter Source Digest, complete `core-tool.lock.json` Catalog Release
-compatibility claim, Advisory Validation workflow identity, and supported Team
-Template version.
+A Template Release is an immutable participant-facing starting point for one
+indexed Team Template. Its annotated Git tag manifest records the exact
+repository commit, language ID, descriptor-derived Team Source and digest,
+Advisory Validation workflow identity, and exact Catalog Release compatibility
+claim.
 
-The release contains no Language Environment Catalog source. The catalog,
-wrapper, runtimes, recipe, readiness contract, entrypoint, and conformance
-fixtures remain exclusively owned and published by `rps-tournament`.
+## Create and verify one Template Release
 
-## Create the release
-
-Use a clean checkout with complete Git history. Confirm that
-`team-template.json` names the new, unused release tag and version, then review
-the release identity before creating it:
+Use a clean checkout with complete Git history. Select the stable language ID
+and the unused Template Release tag named by its descriptor:
 
 ```text
 git status --short
 ./materialize-core-tool .core/rps-tournament
-./release-team-template manifest template-v1
-./release-team-template create template-v1
-./release-team-template verify template-v1
+./release-team-template --template <language-id> manifest <release-tag>
+./release-team-template --template <language-id> create <release-tag>
+./release-team-template --template <language-id> verify <release-tag>
 ```
 
-Creation verifies the content-addressed Runner bundle, exact clean Runner
-commit, package version, catalog path and identity, complete catalog asset map,
-Team Template contents and Source Digest, supported version, and immutable
-workflow action references. It refuses a dirty Template checkout, mismatched
-catalog lock, changed Team Template, mutable action reference, reused tag, or
-tag name that does not match `team-template.json`.
-
-The migrated Python collection entry has its own release identity:
+For Python, the independently addressable Template Release is prepared with:
 
 ```text
 ./release-team-template --template python manifest python-template-v2
@@ -40,63 +27,54 @@ The migrated Python collection entry has its own release identity:
 ./release-team-template --template python verify python-template-v2
 ```
 
-The selected form derives migrated Team Source, participant guidance,
-build-and-test entrypoint, Template Release identity, and matching Language
-Environment from the indexed descriptor. The no-option `template-v1` commands
-remain a legacy Python interface only until collection contraction is complete.
+Creation verifies the content-addressed Runner bundle, exact clean Runner
+commit, complete Catalog Release identity map, selected Team Source and Source
+Digest, supported Team Template version, and immutable workflow action references.
+It rejects a dirty checkout, ambiguous or unknown template selection, mismatched
+catalog lock, changed Team Template, mutable action reference, reused tag, or a
+tag that differs from the selected descriptor.
 
-Push the exact Template commit and annotated tag together. Do not move, delete,
-or recreate a published tag; its annotation is the Template Release manifest.
+Push the exact Template Release commit and annotated tag together. Published
+Template Release tags are never moved, deleted, or recreated.
 
 ```text
 git push origin HEAD
-git push origin refs/tags/template-v1
+git push origin refs/tags/<release-tag>
 ```
 
 ## Verify from a clean clone
 
-Fetch the published tag into a fresh clone, detach at its target, materialize
-the bundled Runner dependency without network access, and verify the record:
-
 ```text
 git clone <template-repository> rps-bot-templates
 cd rps-bot-templates
-git switch --detach template-v1^{}
+git switch --detach <release-tag>^{}
 ./materialize-core-tool .core/rps-tournament
-./release-team-template verify template-v1
+RPS_CORE_PATH=.core/rps-tournament ./check-team-template --template <language-id> --mode docker
+RPS_CORE_PATH=.core/rps-tournament ./validate-team --template <language-id>
+RPS_CORE_PATH=.core/rps-tournament ./release-team-template --template <language-id> verify <release-tag>
 ```
 
 Verification rejects a dirty tree, lightweight or malformed tag, tag aimed at
-another commit, changed Team Template or Advisory Validation workflow, changed
-compatibility claim, and any mismatch between the lock and materialized Runner
-Catalog Release.
+another commit, changed Team Template or workflow, changed compatibility claim,
+and mismatch between the lock and materialized Runner Catalog Release.
 
 ## Create Team branches
 
-Create every Team branch from the dereferenced Template Release commit, never
-from a catalog tag, mutable branch head, or `latest` reference:
+Create every Team branch from the dereferenced Template Release commit:
 
 ```text
-git switch --create team/<team-slug> template-v1^{}
+git switch --create team/<team-slug> <release-tag>^{}
 git push --set-upstream origin team/<team-slug>
 ```
 
-The branch inherits the released Team Template, compatibility lock, Team
-guidance, and Advisory Validation workflow as one reviewed participant-facing
-starting point. Teams then change only `team_source/`.
+Teams then change only the Team Source directory named by the selected
+descriptor and documented in its language-owned participant guide.
 
 ## Corrections and replacement versions
 
 A published Template Release is never repaired in place. A Team Template,
 workflow, guidance, or Catalog Release compatibility change requires a new
-supported template version, a new release tag, and a new manifest. Release notes
-must identify the superseded release and explain the replacement. Existing Team
-branches remain on their original Template Release unless the organizer
-explicitly restarts or migrates them before the declared cutoff.
-
-After publication, use the
-[cross-repository cutover proof](CROSS_REPOSITORY_CUTOVER.md) to retain a clean-
-clone and offline reproduction of the released starter, native platform
-evidence, and organizer workflow. The expected starter Source Digest is checked
-through the materialized Runner catalog during both release creation and
-verification; it is not derived from a catalog copy in this repository.
+supported Team Template version and Template Release tag. Release notes identify
+the superseded Template Release and replacement. Historical `template-v1`
+branches remain historical; the removed singular interface is not restored to
+prepare or verify them.

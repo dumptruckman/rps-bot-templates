@@ -37,7 +37,9 @@ class CatalogConsumerContractTests(unittest.TestCase):
         self,
     ) -> None:
         readme = " ".join((PROJECT_ROOT / "README.md").read_text().split())
-        team_guide = " ".join((PROJECT_ROOT / "TEAM_GUIDE.md").read_text().split())
+        team_guide = " ".join(
+            (PROJECT_ROOT / "templates/python/TEAM_GUIDE.md").read_text().split()
+        )
         context = (PROJECT_ROOT / "CONTEXT.md").read_text()
 
         self.assertIn(
@@ -48,7 +50,10 @@ class CatalogConsumerContractTests(unittest.TestCase):
             "`rps-tournament` is authoritative for the Language Environment Catalog",
             readme,
         )
-        self.assertIn("`team_source/` is the only Team-editable directory", team_guide)
+        self.assertIn(
+            "`templates/python/team_source/` is the only Team-editable directory",
+            team_guide,
+        )
         self.assertIn(
             "Organizer-owned paths are never part of Team Source", team_guide
         )

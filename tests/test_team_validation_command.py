@@ -194,7 +194,10 @@ class TeamValidationCommandTests(unittest.TestCase):
         self.assertEqual([call["stage"] for call in calls], ["source", "build", "certification"])
         catalog = str(self.core.resolve() / LOCK["catalog"]["path"])
         self.assertIn(catalog, calls[0]["arguments"])
-        self.assertIn(str(PROJECT_ROOT / "team_source"), calls[0]["arguments"])
+        self.assertIn(
+            str(PROJECT_ROOT / "templates/python/team_source"),
+            calls[0]["arguments"],
+        )
         self.assertEqual(
             calls[1]["arguments"][calls[1]["arguments"].index("--platform") + 1],
             "linux/arm64",
@@ -210,8 +213,8 @@ class TeamValidationCommandTests(unittest.TestCase):
         )
 
         for label in (
-            "Template Release: template-v1",
-            "Supported Team Template: python-team-template-v1",
+            "Template Release: python-template-v2",
+            "Supported Team Template: python-team-template-v2",
             "Team Source digest:",
             "Catalog:",
             "Core tool:",
@@ -311,7 +314,7 @@ class TeamValidationCommandTests(unittest.TestCase):
         self.assertFalse(self.log.exists())
 
     def test_team_guide_documents_the_one_command_and_advisory_limit(self) -> None:
-        guide = (PROJECT_ROOT / "TEAM_GUIDE.md").read_text()
+        guide = (PROJECT_ROOT / "templates/python/TEAM_GUIDE.md").read_text()
         normalized_guide = " ".join(guide.split())
 
         self.assertIn("./validate-team", guide)

@@ -14,11 +14,12 @@ exact Catalog Release; it does not redefine those assets.
 
 ## Team branches
 
-A fresh Team branch starts from one exact annotated Template Release of the
-Python Team Template. Its working strategy is
-[`team_source/strategy.py`](team_source/strategy.py). Teams must change only
-Team Source under `team_source/`; the catalog and its build, wrapper, workflow,
-and protocol assets remain organizer-owned. See the [Team guide](TEAM_GUIDE.md)
+A fresh Team branch starts from one exact annotated Template Release of a
+selected Team Template. The current Python starter is
+[`templates/python/team_source/strategy.py`](templates/python/team_source/strategy.py).
+Teams must change only the Team Source path named by their selected descriptor;
+the catalog and its build, wrapper, workflow, and protocol assets remain
+organizer-owned. See the [Python Team guide](templates/python/TEAM_GUIDE.md)
 for the strategy contract, approved file types and limits, branch convention,
 and shared-repository honor policy.
 
@@ -26,10 +27,10 @@ Teams with a running Docker engine can exercise the entire Advisory Validation
 path with one command:
 
 ```sh
-./validate-team
+./validate-team --template python
 ```
 
-See the [Team guide](TEAM_GUIDE.md#validate-your-team-source) for the pinned-core
+See the [Python Team guide](templates/python/TEAM_GUIDE.md#validate-your-team-source) for the pinned-core
 checkout prerequisite, result identities, diagnostic categories, and the firm
 boundary between Advisory Validation and official Tournament entry.
 
@@ -54,9 +55,9 @@ and create Team branches from the exact annotated release tag. Catalog Releases
 remain exclusively owned by `rps-tournament`.
 
 The [Team Template collection guide](TEAM_TEMPLATE_COLLECTION.md) documents the
-language-indexed maintainer interface and its compatibility boundary. Python is
-now migrated to `templates/python/`. Its Docker acceptance check and optional
-native check execute the same language-owned script:
+stable language-indexed layout, selection behavior, migration note, and
+checklist for adding another template. Python's Docker acceptance check and
+optional native check execute the same language-owned script:
 
 ```sh
 ./check-team-template --template python --mode docker
@@ -64,9 +65,6 @@ native check execute the same language-owned script:
 ./validate-team --template python
 ./release-team-template --template python manifest python-template-v2
 ```
-
-The former root-level Python paths coexist temporarily until the contraction
-ticket removes the singular interface.
 
 ## Immutable compatibility contract
 
@@ -87,18 +85,13 @@ boundary and lock-update rules.
 
 The ownership boundary is deliberate:
 
-- This repository owns the Team Template under `team_source/`, Team instructions,
-  Advisory Validation entrypoints, and Template Releases.
+- This repository owns indexed Team Templates under `templates/<language-id>/`,
+  Team instructions, Advisory Validation entrypoints, and Template Releases.
 - `rps-tournament` owns every Language Environment and Catalog Release, including
   all organizer-controlled execution assets.
-- Teams edit only `team_source/`. Organizer-owned paths are never Team Source,
-  and no catalog source tree is maintained in this repository.
-
-[`team-template.json`](team-template.json) names the supported Team Template
-version, participant-facing source path, Advisory Validation workflow, and
-release tag. The annotated tag manifest binds those values to the exact
-Template commit, Team Template digest, workflow identity, and complete catalog
-compatibility claim.
+- Teams edit only the `team_source/` directory bound by their selected
+  descriptor. Organizer-owned paths are never Team Source, and no catalog source
+  tree is maintained in this repository.
 
 [`team-templates.json`](team-templates.json) is the collection-aware discovery
 index. Its Python descriptor binds the migrated Team Source, guidance,

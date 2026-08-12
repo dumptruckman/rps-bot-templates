@@ -23,7 +23,6 @@ from template_collection import CollectionError, load_collection
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-DESCRIPTOR_PATH = PROJECT_ROOT / "team-template.json"
 CORE_LOCK_PATH = PROJECT_ROOT / "core-tool.lock.json"
 CORE_BUNDLE_PATH = PROJECT_ROOT / "core-tool.bundle"
 TAG_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -74,57 +73,29 @@ def _descriptor(
     language_id: Optional[str] = None,
     catalog_path: Optional[Path] = None,
 ) -> Dict[str, str]:
-    if language_id is not None:
-        if catalog_path is None:
-            raise ReleaseError("selected Team Template requires a verified catalog")
-        try:
-            selected = load_collection(PROJECT_ROOT, catalog_path).select(language_id)
-        except CollectionError as error:
-            raise ReleaseError("Team Template selection failed: " + str(error)) from error
-        if selected.release_tag != tag:
-            raise ReleaseError(
-                "release tag " + repr(tag) + " does not match "
-                + selected.descriptor_path.as_posix()
-            )
-        return {
-            "format_version": "rps-team-template-v1",
-            "version": selected.version,
-            "path": selected.team_source_path.as_posix(),
-            "expected_source_digest": selected.expected_source_digest,
-            "release_tag": selected.release_tag,
-            "advisory_validation_workflow": selected.advisory_validation_workflow.as_posix(),
-            "language_id": selected.language_id,
-            "language_environment": selected.language_environment,
-            "participant_guidance_path": selected.participant_guidance_path.as_posix(),
-            "build_and_test_entrypoint": selected.build_and_test_entrypoint.as_posix(),
-        }
-    raw = _read_object(DESCRIPTOR_PATH, "Team Template descriptor")
-    expected_fields = {
-        "format_version",
-        "version",
-        "path",
-        "expected_source_digest",
-        "release_tag",
-        "advisory_validation_workflow",
-    }
-    if set(raw) != expected_fields:
-        raise ReleaseError("Team Template descriptor fields mismatch")
-    if raw.get("format_version") != "rps-team-template-v1":
-        raise ReleaseError("Team Template descriptor format is unsupported")
-    for field in expected_fields - {"format_version"}:
-        if not isinstance(raw.get(field), str) or not raw[field]:
-            raise ReleaseError("Team Template descriptor " + field + " is invalid")
-    if raw["release_tag"] != tag:
+    if catalog_path is None:
+        raise ReleaseError("Team Template selection requires a verified catalog")
+    try:
+        selected = load_collection(PROJECT_ROOT, catalog_path).select(language_id)
+    except CollectionError as error:
+        raise ReleaseError("Team Template selection failed: " + str(error)) from error
+    if selected.release_tag != tag:
         raise ReleaseError(
-            "release tag " + repr(tag) + " does not match team-template.json"
+            "release tag " + repr(tag) + " does not match "
+            + selected.descriptor_path.as_posix()
         )
-    _relative_path(raw["path"], "Team Template path")
-    if not FULL_DIGEST.fullmatch(raw["expected_source_digest"]):
-        raise ReleaseError("Team Template expected_source_digest is invalid")
-    _relative_path(
-        raw["advisory_validation_workflow"], "Advisory Validation workflow path"
-    )
-    return {key: str(value) for key, value in raw.items()}
+    return {
+        "format_version": "rps-team-template-v1",
+        "version": selected.version,
+        "path": selected.team_source_path.as_posix(),
+        "expected_source_digest": selected.expected_source_digest,
+        "release_tag": selected.release_tag,
+        "advisory_validation_workflow": selected.advisory_validation_workflow.as_posix(),
+        "language_id": selected.language_id,
+        "language_environment": selected.language_environment,
+        "participant_guidance_path": selected.participant_guidance_path.as_posix(),
+        "build_and_test_entrypoint": selected.build_and_test_entrypoint.as_posix(),
+    }
 
 
 def _core_path() -> Path:
@@ -206,7 +177,7 @@ def _validated_source_digest(
                 "--catalog",
                 str(catalog),
                 "--environment",
-                descriptor.get("language_environment", "python"),
+                descriptor["language_environment"],
                 "--source",
                 str(source),
                 "--bundle",
@@ -280,20 +251,10 @@ def _team_template(
         ),
         "digest": digest,
         "files": files,
-        **(
-            {
-                "language_id": descriptor["language_id"],
-                "language_environment": descriptor["language_environment"],
-                "participant_guidance_path": descriptor[
-                    "participant_guidance_path"
-                ],
-                "build_and_test_entrypoint": descriptor[
-                    "build_and_test_entrypoint"
-                ],
-            }
-            if "language_id" in descriptor
-            else {}
-        ),
+        "language_id": descriptor["language_id"],
+        "language_environment": descriptor["language_environment"],
+        "participant_guidance_path": descriptor["participant_guidance_path"],
+        "build_and_test_entrypoint": descriptor["build_and_test_entrypoint"],
     }
 
 
@@ -387,39 +348,18 @@ def _verify_release(tag: str, language_id: Optional[str] = None) -> Dict[str, An
     if not isinstance(recorded_template, dict):
         raise ReleaseError("release manifest omits the Team Template identity")
     recorded_language = recorded_template.get("language_id")
-    if recorded_language is not None and not isinstance(recorded_language, str):
-        raise ReleaseError("release manifest has an invalid language ID")
+    if not isinstance(recorded_language, str) or not recorded_language:
+        raise ReleaseError("release manifest omits a valid language ID")
     try:
         if language_id is not None:
-            selected = build_manifest(tag, language_id)
-            if recorded_language is None:
-                legacy = build_manifest(tag)
-                selected_template = selected["team_template"]
-                legacy_template = legacy["team_template"]
-                shared_fields = (
-                    "version",
-                    "path",
-                    "expected_source_digest",
-                    "digest",
-                    "files",
+            if recorded_language != language_id:
+                raise ReleaseError(
+                    "release language "
+                    + repr(recorded_language)
+                    + " does not match selected Team Template "
+                    + repr(language_id)
                 )
-                if any(
-                    selected_template[field] != legacy_template[field]
-                    for field in shared_fields
-                ):
-                    raise ReleaseError(
-                        "selected Team Template does not match the legacy release identity"
-                    )
-                expected = legacy
-            else:
-                if recorded_language != language_id:
-                    raise ReleaseError(
-                        "release language "
-                        + repr(recorded_language)
-                        + " does not match selected Team Template "
-                        + repr(language_id)
-                    )
-                expected = selected
+            expected = build_manifest(tag, language_id)
         else:
             expected = build_manifest(tag, recorded_language)
     except ReleaseError as error:

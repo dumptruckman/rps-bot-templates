@@ -7,7 +7,7 @@ import unittest
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNBOOK = PROJECT_ROOT / "SUBMISSION_CUTOFF.md"
 README = PROJECT_ROOT / "README.md"
-TEAM_GUIDE = PROJECT_ROOT / "TEAM_GUIDE.md"
+TEAM_GUIDE = PROJECT_ROOT / "templates/python/TEAM_GUIDE.md"
 
 
 class SubmissionCutoffRunbookTests(unittest.TestCase):

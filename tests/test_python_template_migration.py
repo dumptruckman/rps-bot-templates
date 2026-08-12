@@ -73,6 +73,13 @@ class PythonTemplateMigrationTests(unittest.TestCase):
             "Entrypoint: templates/python/build-and-test", completed.stdout
         )
 
+    def test_root_command_reports_available_language_ids_for_a_bad_selection(self) -> None:
+        completed = self.run_command("--template", "go", "--mode", "native")
+
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("unknown Team Template 'go'", completed.stderr)
+        self.assertIn("available: python", completed.stderr)
+
     def test_docker_mode_runs_the_identical_entrypoint_in_the_pinned_toolchain(self) -> None:
         self.write_executable(
             "docker",
@@ -183,11 +190,12 @@ class PythonTemplateMigrationTests(unittest.TestCase):
         self.assertIn("Docker-host failure", docker.stderr)
         self.assertIn("Cannot connect to the Docker daemon", docker.stderr)
 
-    def test_move_preserves_source_behavior_but_changes_release_identity(self) -> None:
+    def test_contraction_keeps_only_the_migrated_release_identity(self) -> None:
         legacy = PROJECT_ROOT / "team_source/strategy.py"
         migrated = PROJECT_ROOT / "templates/python/team_source/strategy.py"
 
-        self.assertEqual(migrated.read_bytes(), legacy.read_bytes())
+        self.assertTrue(migrated.is_file())
+        self.assertFalse(legacy.exists())
         self.assertEqual(
             DESCRIPTOR["expected_source_digest"],
             "sha256:e2890c1587c6c98acb62121e5524d8f75a53925ed738f333f63beee81e60fd1a",
@@ -197,12 +205,7 @@ class PythonTemplateMigrationTests(unittest.TestCase):
         self.assertEqual(
             DESCRIPTOR["team_source_path"], "templates/python/team_source"
         )
-        self.assertNotEqual(
-            DESCRIPTOR["release_tag"],
-            json.loads((PROJECT_ROOT / "team-template.json").read_text())[
-                "release_tag"
-            ],
-        )
+        self.assertFalse((PROJECT_ROOT / "team-template.json").exists())
 
 
 if __name__ == "__main__":

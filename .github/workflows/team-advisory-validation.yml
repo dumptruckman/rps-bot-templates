@@ -30,11 +30,59 @@ jobs:
         id: core_lock
         run: |
           ./materialize-core-tool .core/rps-tournament
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
           import json
+          import os
+          from pathlib import Path
+          import subprocess
+          from template_collection import load_collection
+
           with open("core-tool.lock.json") as stream:
               lock = json.load(stream)
-          print("commit=" + lock["runner"]["commit"])
+          catalog_path = Path(".core/rps-tournament") / lock["catalog"]["path"]
+          collection = load_collection(Path("."), catalog_path)
+          candidates = []
+          for language_id in collection.language_ids:
+              template = collection.select(language_id)
+              release = subprocess.run(
+                  ["git", "rev-parse", template.release_tag + "^{}"],
+                  capture_output=True,
+                  text=True,
+              )
+              if release.returncode != 0:
+                  continue
+              release_commit = release.stdout.strip()
+              unchanged = subprocess.run(
+                  [
+                      "git", "diff", "--quiet", release_commit,
+                      os.environ["GITHUB_SHA"], "--", ".",
+                      ":(exclude)" + template.team_source_path.as_posix() + "/**",
+                  ]
+              )
+              if unchanged.returncode == 0:
+                  candidates.append(template)
+          if len(candidates) != 1:
+              available = ", ".join(collection.language_ids)
+              raise SystemExit(
+                  "Team Template selection is not unique for this branch; available: "
+                  + available
+              )
+          template = collection.select(candidates[0].language_id)
+          github_output = Path(os.environ["GITHUB_OUTPUT"])
+          github_environment = Path(os.environ["GITHUB_ENV"])
+          with github_output.open("a") as output:
+              output.write("commit=" + lock["runner"]["commit"] + "\n")
+          with github_environment.open("a") as environment:
+              environment.write("TEAM_TEMPLATE_ID=" + template.language_id + "\n")
+              environment.write(
+                  "TEAM_LANGUAGE_ENVIRONMENT=" + template.language_environment + "\n"
+              )
+              environment.write(
+                  "TEAM_TEMPLATE_RELEASE=" + template.release_tag + "\n"
+              )
+              environment.write(
+                  "TEAM_SOURCE_PATH=" + template.team_source_path.as_posix() + "\n"
+              )
           PY
       - name: Verify the exact Template Release
         id: template_release
@@ -43,13 +91,13 @@ jobs:
           RPS_CORE_PATH: ${{ github.workspace }}/.core/rps-tournament
         run: |
           mkdir -p .advisory
-          release_tag="$(python3 -c 'import json; print(json.load(open("templates/python/team-template.json"))["release_tag"])')"
-          release_commit="$(git rev-parse "${release_tag}^{}")"
+          release_commit="$(git rev-parse "${TEAM_TEMPLATE_RELEASE}^{}")"
           git worktree add --detach .template-release "${release_commit}"
-          .template-release/release-team-template --template python verify "${release_tag}" \
+          .template-release/release-team-template \
+            --template "$TEAM_TEMPLATE_ID" verify "$TEAM_TEMPLATE_RELEASE" \
             > .advisory/template-release.json
           git diff --quiet "${release_commit}" "${GITHUB_SHA}" \
-            -- . ':(exclude)templates/python/team_source/**' || {
+            -- . ":(exclude)${TEAM_SOURCE_PATH}/**" || {
               echo "Team branch changed files outside the released Team Source boundary" >&2
               exit 1
             }
@@ -68,18 +116,20 @@ jobs:
 
           catalog_contract = load_catalog(Path(os.environ["CATALOG"]))
           runtimes = json.loads(
-              catalog_contract.environment("python").assets["base_runtime"].content
+              catalog_contract.environment(
+                  os.environ["TEAM_LANGUAGE_ENVIRONMENT"]
+              ).assets["base_runtime"].content
           )
           selected = runtimes["platforms"]["linux/amd64"]
           print(selected["build_toolchain"]["image"])
           PY
           )"
           docker pull --platform "$PLATFORM" "$runtime_reference"
-      - name: Build and test the Python Team Template in its pinned toolchain
+      - name: Build and test the Team Template in its pinned toolchain
         if: steps.template_release.outcome == 'success'
         env:
           RPS_CORE_PATH: ${{ github.workspace }}/.core/rps-tournament
-        run: ./check-team-template --template python --mode docker
+        run: ./check-team-template --template "$TEAM_TEMPLATE_ID" --mode docker
       - name: Freeze Team Source
         id: source
         if: steps.template_release.outcome == 'success'
@@ -87,8 +137,8 @@ jobs:
         run: |
           python3 -m rps_runner.source_cli \
             --catalog "$CATALOG" \
-            --environment python \
-            --source templates/python/team_source \
+            --environment "$TEAM_LANGUAGE_ENVIRONMENT" \
+            --source "$TEAM_SOURCE_PATH" \
             --bundle .advisory/source-bundle
       - name: Build disposable Linux/AMD64 confidence image
         id: build
@@ -177,7 +227,9 @@ jobs:
               from rps_runner.language_environment import load_catalog
 
               catalog_contract = load_catalog(Path(os.environ["CATALOG"]))
-              language_environment = catalog_contract.environment("python")
+              language_environment = catalog_contract.environment(
+                  os.environ["TEAM_LANGUAGE_ENVIRONMENT"]
+              )
               conformance = language_environment.assets["conformance"]
               runtime_catalog = json.loads(
                   language_environment.assets["base_runtime"].content

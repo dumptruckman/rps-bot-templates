@@ -46,19 +46,23 @@ def compatibility() -> dict[str, object]:
 def template_release() -> dict[str, object]:
     return {
         "release_format_version": "template-release-v1",
-        "template_repository": {"commit": "4" * 40, "tag": "template-v1"},
+        "template_repository": {"commit": "4" * 40, "tag": "python-template-v2"},
         "team_template": {
-            "version": "python-team-template-v1",
-            "path": "team_source",
+            "version": "python-team-template-v2",
+            "path": "templates/python/team_source",
             "digest": "sha256:" + "5" * 64,
             "files": {"strategy.py": "sha256:" + "6" * 64},
             "expected_source_digest": EXPECTED_SOURCE,
+            "language_id": "python",
+            "language_environment": "python",
+            "participant_guidance_path": "templates/python/TEAM_GUIDE.md",
+            "build_and_test_entrypoint": "templates/python/build-and-test",
         },
         "catalog_compatibility": compatibility(),
         "advisory_validation": {
             "workflow_path": ".github/workflows/team-advisory-validation.yml",
             "workflow_identity": "team-advisory-validation-v1@sha256:" + "7" * 64,
-            "supported_template_version": "python-team-template-v1",
+            "supported_template_version": "python-team-template-v2",
         },
     }
 
@@ -101,9 +105,9 @@ def advisory_eligibility() -> dict[str, object]:
         "core_tool_commit": "1" * 40,
         "platform": "linux/amd64",
         "template_release": {
-            "tag": "template-v1",
+            "tag": "python-template-v2",
             "commit": "4" * 40,
-            "team_template_version": "python-team-template-v1",
+            "team_template_version": "python-team-template-v2",
             "team_template_digest": "sha256:" + "5" * 64,
             "starter_source_digest": EXPECTED_SOURCE,
             "advisory_validation_workflow": release["advisory_validation"]["workflow_identity"],

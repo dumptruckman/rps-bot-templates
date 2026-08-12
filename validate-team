@@ -17,7 +17,6 @@ from template_collection import CollectionError, load_collection
 
 
 ROOT = Path(__file__).resolve().parent
-TEAM_SOURCE = ROOT / "team_source"
 PROFILE = "docker-execution-v1"
 
 
@@ -175,28 +174,14 @@ def main() -> int:
     if materialized.returncode != 0:
         return fail("Pinned core tool", materialized.stderr or materialized.stdout)
     catalog = core / str(lock["catalog"]["path"])
-    if arguments.template is None:
-        try:
-            template = read_object(ROOT / "team-template.json")
-            template_release = template["release_tag"]
-            template_version = template["version"]
-            if not isinstance(template_release, str) or not template_release:
-                raise ValueError("Template Release tag is not a string")
-            if not isinstance(template_version, str) or not template_version:
-                raise ValueError("Team Template version is not a string")
-        except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
-            return fail("Pinned core tool", str(error))
-        team_source = TEAM_SOURCE
-        language_environment = "python"
-    else:
-        try:
-            selected = load_collection(ROOT, catalog).select(arguments.template)
-        except CollectionError as error:
-            return fail("Team Template selection", str(error))
-        template_release = selected.release_tag
-        template_version = selected.version
-        team_source = ROOT / selected.team_source_path
-        language_environment = selected.language_environment
+    try:
+        selected = load_collection(ROOT, catalog).select(arguments.template)
+    except CollectionError as error:
+        return fail("Team Template selection", str(error))
+    template_release = selected.release_tag
+    template_version = selected.version
+    team_source = ROOT / selected.team_source_path
+    language_environment = selected.language_environment
     try:
         host = run(
             [

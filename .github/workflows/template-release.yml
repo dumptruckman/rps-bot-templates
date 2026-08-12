@@ -18,27 +18,47 @@ jobs:
         with:
           fetch-depth: 0
       - name: Materialize the pinned Runner Catalog Release
-        run: ./materialize-core-tool .core/rps-tournament
+        run: |
+          ./materialize-core-tool .core/rps-tournament
+          python3 - <<'PY' > .team-templates.tsv
+          import json
+          from pathlib import Path
+          from template_collection import load_collection
+
+          lock = json.loads(Path("core-tool.lock.json").read_text())
+          catalog_path = Path(".core/rps-tournament") / lock["catalog"]["path"]
+          collection = load_collection(Path("."), catalog_path)
+          for language_id in collection.language_ids:
+              template = collection.select(language_id)
+              print("\t".join((
+                  template.language_id,
+                  template.language_environment,
+                  template.release_tag,
+              )))
+          PY
       - name: Verify the Template Release contract
         env:
           RPS_CORE_PATH: .core/rps-tournament
         run: |
-          release_tag="$(python3 -c 'import json; print(json.load(open("templates/python/team-template.json"))["release_tag"])')"
-          ./release-team-template --template python manifest "${release_tag}"
-          toolchain="$(python3 - <<'PY'
-          import json
-          from pathlib import Path
-          lock = json.loads(Path("core-tool.lock.json").read_text())
-          catalog_path = Path(".core/rps-tournament") / lock["catalog"]["path"]
-          catalog = json.loads(catalog_path.read_text())
-          asset = catalog["environments"]["python"]["assets"]["build_toolchain"]["path"]
-          runtimes = json.loads((catalog_path.parent / asset).read_text())
-          print(runtimes["platforms"]["linux/amd64"]["build_toolchain"]["image"])
-          PY
-          )"
-          docker pull --platform linux/amd64 "$toolchain"
-          RPS_CORE_PATH=.core/rps-tournament \
-            ./check-team-template --template python --mode docker
+          while IFS=$'\t' read -r template_id language_environment release_tag; do
+            ./release-team-template --template "$template_id" manifest "$release_tag"
+            toolchain="$(TEAM_LANGUAGE_ENVIRONMENT="$language_environment" python3 - <<'PY'
+            import json
+            import os
+            from pathlib import Path
+            lock = json.loads(Path("core-tool.lock.json").read_text())
+            catalog_path = Path(".core/rps-tournament") / lock["catalog"]["path"]
+            catalog = json.loads(catalog_path.read_text())
+            environment = catalog["environments"][os.environ["TEAM_LANGUAGE_ENVIRONMENT"]]
+            asset = environment["assets"]["build_toolchain"]["path"]
+            runtimes = json.loads((catalog_path.parent / asset).read_text())
+            print(runtimes["platforms"]["linux/amd64"]["build_toolchain"]["image"])
+            PY
+            )"
+            docker pull --platform linux/amd64 "$toolchain"
+            RPS_CORE_PATH=.core/rps-tournament \
+              ./check-team-template --template "$template_id" --mode docker
+          done < .team-templates.tsv
           python3 -m unittest discover -s tests -v
       - name: Verify the published annotated Template Release tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -47,11 +67,4 @@ jobs:
         run: |
           git fetch --no-tags --force origin \
             "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
-          case "${GITHUB_REF_NAME}" in
-            python-template-v*)
-              ./release-team-template --template python verify "${GITHUB_REF_NAME}"
-              ;;
-            *)
-              ./release-team-template verify "${GITHUB_REF_NAME}"
-              ;;
-          esac
+          ./release-team-template verify "${GITHUB_REF_NAME}"

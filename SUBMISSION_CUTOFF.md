@@ -57,14 +57,17 @@ git -C selected-team checkout --detach <selected-40-character-sha>
 git -C selected-team rev-parse HEAD
 
 mkdir source-export
+team_source_path=<selected-descriptor-team-source-path>
+language_environment=<selected-descriptor-language-environment>
 git -C selected-team archive --format=tar \
-  --prefix=team-source/ <selected-40-character-sha>:team_source \
+  --prefix=team-source/ <selected-40-character-sha>:"$team_source_path" \
   | tar -xf - -C source-export
 ```
 
 The reported `HEAD` must equal the selection record's `source_commit`. Export
-only `team_source/`; do not use a catalog, wrapper, workflow, recipe, or core
-lock taken from a Team branch. The organizer's verified Template Release
+only the selected descriptor's `team_source_path`; do not use a catalog,
+wrapper, workflow, recipe, or core lock taken from a Team branch. The
+organizer's verified Template Release
 checkout supplies `core-tool.lock.json`; the exact materialized Runner checkout
 named by that lock is the authority for the pinned Catalog Release.
 
@@ -75,7 +78,7 @@ the core tool's existing boundary:
 ```sh
 PYTHONPATH=<pinned-core-checkout> python3 -m rps_runner.source_cli \
   --catalog <pinned-core-checkout>/language_environments/catalog-v1/catalog.json \
-  --environment python \
+  --environment "$language_environment" \
   --source source-export/team-source \
   --bundle validated-source-bundle
 ```
@@ -103,8 +106,9 @@ original delivery unchanged.
 
 For a ZIP archive, inspect its file list for absolute paths and `..` traversal
 before extracting it into a new isolated directory. Locate the directory whose
-contents correspond to `team_source/`; do not accept organizer-owned catalog,
-wrapper, recipe, workflow, or dependency files as Team Source. Pass that local
+contents correspond to the selected descriptor's Team Source path; do not
+accept organizer-owned catalog, wrapper, recipe, workflow, or dependency files
+as Team Source. Pass that local
 directory to the same pinned source validator command shown above, using the
 Catalog Release pinned by the verified Template Release.
 

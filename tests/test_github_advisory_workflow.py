@@ -32,16 +32,16 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
     def test_branch_is_bound_to_one_verified_template_release(self) -> None:
         workflow = self.workflow
 
+        self.assertIn("from template_collection import load_collection", workflow)
+        self.assertIn('collection = load_collection(Path("."), catalog_path)', workflow)
+        self.assertIn("for language_id in collection.language_ids", workflow)
+        self.assertIn("if len(candidates) != 1", workflow)
+        self.assertIn('git rev-parse "${TEAM_TEMPLATE_RELEASE}^{}"', workflow)
         self.assertIn(
-            'json.load(open("templates/python/team-template.json"))["release_tag"]',
+            '--template "$TEAM_TEMPLATE_ID" verify "$TEAM_TEMPLATE_RELEASE"',
             workflow,
         )
-        self.assertIn('git rev-parse "${release_tag}^{}"', workflow)
-        self.assertIn(
-            '.template-release/release-team-template --template python verify "${release_tag}"',
-            workflow,
-        )
-        self.assertIn("':(exclude)templates/python/team_source/**'", workflow)
+        self.assertIn('\":(exclude)${TEAM_SOURCE_PATH}/**\"', workflow)
         self.assertIn('"template_release"', workflow)
         for field in (
             '"team_template_version"',
@@ -58,7 +58,8 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         catalog = ".core/rps-tournament/language_environments/catalog-v1/catalog.json"
         self.assertIn("PYTHONPATH: .core/rps-tournament", workflow)
         self.assertIn("python3 -m rps_runner.source_cli", workflow)
-        self.assertIn("--source templates/python/team_source", workflow)
+        self.assertIn('--source "$TEAM_SOURCE_PATH"', workflow)
+        self.assertIn('--environment "$TEAM_LANGUAGE_ENVIRONMENT"', workflow)
         self.assertIn("--catalog \"$CATALOG\"", workflow)
         self.assertEqual(workflow.count("python3 -m rps_runner.artifact_cli"), 1)
         self.assertIn("python3 -m rps_runner.certification_cli", workflow)
@@ -92,7 +93,8 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("docker push", workflow.lower())
         self.assertIn(
-            "./check-team-template --template python --mode docker", workflow
+            './check-team-template --template "$TEAM_TEMPLATE_ID" --mode docker',
+            workflow,
         )
 
     def test_job_has_read_only_authority_and_cancels_only_superseded_branch_work(self) -> None:
