@@ -37,6 +37,8 @@ class TemplateReleaseTests(unittest.TestCase):
         cls.temporary_directory.cleanup()
 
     def run_command(self, *arguments: str) -> subprocess.CompletedProcess[str]:
+        if "--template" not in arguments:
+            arguments = ("--template", "python", *arguments)
         environment = os.environ.copy()
         environment["RPS_CORE_PATH"] = str(self.core_path)
         return subprocess.run(
@@ -89,6 +91,8 @@ class TemplateReleaseTests(unittest.TestCase):
     def run_repository_command(
         self, repository: Path, *arguments: str
     ) -> subprocess.CompletedProcess[str]:
+        if "--template" not in arguments:
+            arguments = ("--template", "python", *arguments)
         environment = os.environ.copy()
         environment["RPS_CORE_PATH"] = str(self.core_path)
         return subprocess.run(
@@ -191,12 +195,12 @@ class TemplateReleaseTests(unittest.TestCase):
         repository = self.make_release_repository()
 
         created = self.run_repository_command(
-            repository, "--template", "python", "create", "python-template-v2"
+            repository, "--template", "go", "create", "go-template-v1"
         )
         self.assertEqual(created.returncode, 0, created.stderr)
 
         verified = self.run_repository_command(
-            repository, "--template", "python", "verify", "python-template-v2"
+            repository, "--template", "go", "verify", "go-template-v1"
         )
         self.assertEqual(verified.returncode, 0, verified.stderr)
         self.assertEqual(json.loads(verified.stdout), json.loads(created.stdout))

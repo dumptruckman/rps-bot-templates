@@ -4,6 +4,10 @@
     {
       "language_id": "python",
       "descriptor": "templates/python/team-template.json"
+    },
+    {
+      "language_id": "go",
+      "descriptor": "templates/go/team-template.json"
     }
   ]
 }

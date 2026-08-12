@@ -12,6 +12,17 @@
       "contract-fixture.recipe": "contract-build-recipe-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
       "contract-fixture.workflow": "source-validation-workflow-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
       "contract-fixture.wrapper": "contract-wrapper-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "go.base_runtime": "go-runtime-v1@sha256:039edb9cbbb9a92f9b057a443fe9e41cc3b76e4517f8a0f8eabda9e4a3f7e02e",
+      "go.build_target": "go-build-target-v1@sha256:86890e1d64cbb93ac4dccd6c733079a89c75e6ef397ddb2b0f84a056f863f5fe",
+      "go.build_toolchain": "go-build-toolchain-v1@sha256:039edb9cbbb9a92f9b057a443fe9e41cc3b76e4517f8a0f8eabda9e4a3f7e02e",
+      "go.conformance": "go-conformance-v1@sha256:d791f1719d0becbcb1b36bf4f94a006484637d8762685d9b7471ca1f8f39c1e8",
+      "go.dependency_definition": "go-dependencies-v1@sha256:8010915a36472885f580d28ff7d66a5a33383e7099276ace537dcece51c7abbf",
+      "go.entrypoint": "go-entrypoint-v1@sha256:512c1358a7d100a49c3852fa1971c556e1369271932a78ae8bab79a605c021b8",
+      "go.platform": "go-oci-platforms-v1@sha256:039edb9cbbb9a92f9b057a443fe9e41cc3b76e4517f8a0f8eabda9e4a3f7e02e",
+      "go.readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
+      "go.recipe": "go-build-recipe-v1@sha256:86890e1d64cbb93ac4dccd6c733079a89c75e6ef397ddb2b0f84a056f863f5fe",
+      "go.workflow": "source-validation-workflow-v1@sha256:990c9a504e5227f198a4d9730baac1c2d8787a2d6c5b9c6516c0f6658feb0143",
+      "go.wrapper": "go-wrapper-v1@sha256:5c1f6735da04c81a7b9eebc76132f4096ddf914a93a965469f1b22dbf83bc2ce",
       "internal-shell.base_runtime": "internal-shell-runtime-v1@sha256:c8c91b683287d06ecc407ef4f568c2c4db18223d91541e1f67343138e028b62c",
       "internal-shell.build_target": "internal-shell-build-target-v1@sha256:3875f006a4f660e811a97358f4017eb98073078138154631d4bc171890a36b3b",
       "internal-shell.build_toolchain": "internal-shell-build-toolchain-v1@sha256:c8c91b683287d06ecc407ef4f568c2c4db18223d91541e1f67343138e028b62c",
@@ -35,15 +46,15 @@
       "python.workflow": "source-validation-workflow-v1@sha256:a66d958d1eaf7ed7b36ecc3aa0192dd28a67a172ef810d42575a8c73b14ce6f4",
       "python.wrapper": "python-wrapper-v2@sha256:a82ae2481ad47d0697f318ccf09c5e8bd9597efbbca12f31366fc61d811baed7"
     },
-    "identity": "rps-language-environment-catalog-v1@sha256:bec500361e5e5d9526d6342bac34b5ace37557496884924c1d1d41fa00a9c2cb",
+    "identity": "rps-language-environment-catalog-v1@sha256:9e78f85567c3ae4152bae4dec378643e3bf5572a0602ab7599b8bb486ce93ee8",
     "path": "language_environments/catalog-v1/catalog.json"
   },
   "format_version": "rps-catalog-compatibility-v1",
   "offline_bundle": {
-    "identity": "rps-runner-offline-bundle-v1@sha256:03444cb9751bfebe0d32be173ebfc1bd1f9f61f0cf22107193239c7bdbefd076"
+    "identity": "rps-runner-offline-bundle-v1@sha256:11946f50d599a8dc44e4821708ba3f4832a10dbe04a46a86965d8f9a9b4956e4"
   },
   "runner": {
-    "commit": "1edc8e133e5aca0e93357bb42b5ecfbb22a667fd",
+    "commit": "1380c98118153172331b141c3539dfb37da601db",
     "package_version": "0.1.0"
   }
 }

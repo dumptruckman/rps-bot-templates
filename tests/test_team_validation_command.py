@@ -164,6 +164,8 @@ class TeamValidationCommandTests(unittest.TestCase):
     def run_command(
         self, *arguments: str, **environment: str
     ) -> subprocess.CompletedProcess[str]:
+        if "--template" not in arguments:
+            arguments = ("--template", "python", *arguments)
         process_environment = os.environ.copy()
         process_environment.update(
             {

@@ -16,8 +16,9 @@ The descriptor binds the controlled Team Source, participant guidance,
 language-owned build-and-test entrypoint, independently addressable Template
 Release, Advisory Validation workflow, and matching Runner-owned Language
 Environment. Paths are repository-relative POSIX paths.
-The current [Python descriptor](templates/python/team-template.json) is the
-reference implementation of this layout.
+The [Python descriptor](templates/python/team-template.json) and
+[Go descriptor](templates/go/team-template.json) are independent instances of
+this layout.
 
 Collection loading rejects duplicate language IDs, missing descriptors or bound
 files, unsafe paths, symbolic-link targets, mutable runtime references, and
@@ -45,13 +46,13 @@ Language Environment in the exact pinned Catalog Release. Advisory Validation
 and Template Release preparation derive Team Source, language identity,
 guidance, workflow, and Template Release metadata from the same descriptor.
 
-For the current Python Template Release, a clean clone can run:
+For the Go Template Release, a clean clone can run:
 
 ```sh
 ./materialize-core-tool .core/rps-tournament
-RPS_CORE_PATH=.core/rps-tournament ./check-team-template --template python --mode docker
-RPS_CORE_PATH=.core/rps-tournament ./validate-team --template python
-RPS_CORE_PATH=.core/rps-tournament ./release-team-template --template python manifest python-template-v2
+RPS_CORE_PATH=.core/rps-tournament ./check-team-template --template go --mode docker
+RPS_CORE_PATH=.core/rps-tournament ./validate-team --template go
+RPS_CORE_PATH=.core/rps-tournament ./release-team-template --template go manifest go-template-v1
 ```
 
 ## Checklist for adding a Team Template

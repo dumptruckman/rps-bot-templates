@@ -15,11 +15,13 @@ exact Catalog Release; it does not redefine those assets.
 ## Team branches
 
 A fresh Team branch starts from one exact annotated Template Release of a
-selected Team Template. The current Python starter is
-[`templates/python/team_source/strategy.py`](templates/python/team_source/strategy.py).
+selected Team Template. The collection includes independently released
+[Python](templates/python/team_source/strategy.py) and
+[Go](templates/go/team_source/strategy.go) starters.
 Teams must change only the Team Source path named by their selected descriptor;
 the catalog and its build, wrapper, workflow, and protocol assets remain
-organizer-owned. See the [Python Team guide](templates/python/TEAM_GUIDE.md)
+organizer-owned. See the [Python Team guide](templates/python/TEAM_GUIDE.md) or
+[Go Team guide](templates/go/TEAM_GUIDE.md)
 for the strategy contract, approved file types and limits, branch convention,
 and shared-repository honor policy.
 
@@ -56,14 +58,14 @@ remain exclusively owned by `rps-tournament`.
 
 The [Team Template collection guide](TEAM_TEMPLATE_COLLECTION.md) documents the
 stable language-indexed layout, selection behavior, migration note, and
-checklist for adding another template. Python's Docker acceptance check and
-optional native check execute the same language-owned script:
+checklist for adding another template. Each template's Docker acceptance check
+and optional native check execute the same language-owned script. For Go:
 
 ```sh
-./check-team-template --template python --mode docker
-./check-team-template --template python --mode native
-./validate-team --template python
-./release-team-template --template python manifest python-template-v2
+./check-team-template --template go --mode docker
+./check-team-template --template go --mode native
+./validate-team --template go
+./release-team-template --template go manifest go-template-v1
 ```
 
 ## Immutable compatibility contract
@@ -94,9 +96,9 @@ The ownership boundary is deliberate:
   tree is maintained in this repository.
 
 [`team-templates.json`](team-templates.json) is the collection-aware discovery
-index. Its Python descriptor binds the migrated Team Source, guidance,
-build-and-test entrypoint, matching Language Environment, and independently
-addressable `python-template-v2` release identity.
+index. Its Python and Go descriptors independently bind each starter's Team
+Source, guidance, build-and-test entrypoint, matching Language Environment, and
+language-specific Template Release identity.
 
 ## Verify a compatibility-lock change
 

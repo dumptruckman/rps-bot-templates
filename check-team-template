@@ -148,7 +148,7 @@ def docker_check(
             "--workdir",
             "/workspace",
             "--tmpfs",
-            "/tmp:rw,noexec,nosuid,size=64m",
+            "/tmp:rw,exec,nosuid,size=512m",
             image,
             entrypoint,
         )

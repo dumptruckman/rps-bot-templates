@@ -18,6 +18,10 @@ class TemplateCollectionTests(unittest.TestCase):
         self.root = Path(self.temporary_directory.name)
         for relative in (
             "team-templates.json",
+            "templates/go/team-template.json",
+            "templates/go/team_source/strategy.go",
+            "templates/go/TEAM_GUIDE.md",
+            "templates/go/build-and-test",
             "templates/python/team-template.json",
             "templates/python/team_source/strategy.py",
             "templates/python/TEAM_GUIDE.md",
@@ -36,7 +40,8 @@ class TemplateCollectionTests(unittest.TestCase):
                     "python": {
                         "language": "python",
                         "contract_only": False,
-                    }
+                    },
+                    "go": {"language": "go", "contract_only": False},
                 }
             },
         )
@@ -57,7 +62,7 @@ class TemplateCollectionTests(unittest.TestCase):
 
         template = collection.select("python")
 
-        self.assertEqual(collection.language_ids, ("python",))
+        self.assertEqual(collection.language_ids, ("go", "python"))
         self.assertEqual(template.language_id, "python")
         self.assertEqual(template.language_environment, "python")
         self.assertEqual(
@@ -75,7 +80,9 @@ class TemplateCollectionTests(unittest.TestCase):
 
     def test_rejects_duplicate_ids_missing_descriptors_and_unsafe_paths(self) -> None:
         original = self.read_json("team-templates.json")
-        python_entry = original["templates"][0]
+        python_entry = next(
+            entry for entry in original["templates"] if entry["language_id"] == "python"
+        )
         cases = {
             "duplicate language ID": [python_entry, python_entry],
             "missing descriptor": [
@@ -105,10 +112,10 @@ class TemplateCollectionTests(unittest.TestCase):
             load_collection(self.root, self.catalog)
 
         descriptor["team_source_path"] = "templates/python/team_source"
-        descriptor["language_environment"] = "go"
+        descriptor["language_environment"] = "java"
         self.write_json("templates/python/team-template.json", descriptor)
         with self.assertRaisesRegex(
-            CollectionError, "Language Environment 'go'.*pinned Catalog Release"
+            CollectionError, "Language Environment 'java'.*pinned Catalog Release"
         ):
             load_collection(self.root, self.catalog)
 
@@ -134,21 +141,6 @@ class TemplateCollectionTests(unittest.TestCase):
             load_collection(self.root, self.catalog)
 
     def test_selection_must_be_explicit_when_more_than_one_template_exists(self) -> None:
-        descriptor = self.read_json("templates/python/team-template.json")
-        descriptor["language_id"] = "go"
-        descriptor["language_environment"] = "go"
-        descriptor["release_tag"] = "go-template-v1"
-        self.write_json("templates/go/team-template.json", descriptor)
-        catalog = json.loads(self.catalog.read_text())
-        catalog["environments"]["go"] = dict(catalog["environments"]["python"])
-        catalog["environments"]["go"]["language"] = "go"
-        self.catalog.write_text(json.dumps(catalog))
-        index = self.read_json("team-templates.json")
-        index["templates"].append(
-            {"language_id": "go", "descriptor": "templates/go/team-template.json"}
-        )
-        self.write_json("team-templates.json", index)
-
         collection = load_collection(self.root, self.catalog)
 
         with self.assertRaisesRegex(
@@ -165,8 +157,9 @@ class TemplateCollectionTests(unittest.TestCase):
         for statement in (
             "team-templates.json",
             "templates/python/team-template.json",
-            "./validate-team --template python",
-            "./release-team-template --template python manifest python-template-v2",
+            "templates/go/team-template.json",
+            "./validate-team --template go",
+            "./release-team-template --template go manifest go-template-v1",
             "Team Templates",
             "Runner-owned Language Environments",
             "exact pinned Catalog Release",
