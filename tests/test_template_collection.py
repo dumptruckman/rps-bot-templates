@@ -22,6 +22,10 @@ class TemplateCollectionTests(unittest.TestCase):
             "templates/go/team_source/strategy.go",
             "templates/go/TEAM_GUIDE.md",
             "templates/go/build-and-test",
+            "templates/java/team-template.json",
+            "templates/java/team_source/Strategy.java",
+            "templates/java/TEAM_GUIDE.md",
+            "templates/java/build-and-test",
             "templates/python/team-template.json",
             "templates/python/team_source/strategy.py",
             "templates/python/TEAM_GUIDE.md",
@@ -42,6 +46,7 @@ class TemplateCollectionTests(unittest.TestCase):
                         "contract_only": False,
                     },
                     "go": {"language": "go", "contract_only": False},
+                    "java": {"language": "java", "contract_only": False},
                 }
             },
         )
@@ -62,7 +67,7 @@ class TemplateCollectionTests(unittest.TestCase):
 
         template = collection.select("python")
 
-        self.assertEqual(collection.language_ids, ("go", "python"))
+        self.assertEqual(collection.language_ids, ("go", "java", "python"))
         self.assertEqual(template.language_id, "python")
         self.assertEqual(template.language_environment, "python")
         self.assertEqual(
@@ -112,10 +117,10 @@ class TemplateCollectionTests(unittest.TestCase):
             load_collection(self.root, self.catalog)
 
         descriptor["team_source_path"] = "templates/python/team_source"
-        descriptor["language_environment"] = "java"
+        descriptor["language_environment"] = "rust"
         self.write_json("templates/python/team-template.json", descriptor)
         with self.assertRaisesRegex(
-            CollectionError, "Language Environment 'java'.*pinned Catalog Release"
+            CollectionError, "Language Environment 'rust'.*pinned Catalog Release"
         ):
             load_collection(self.root, self.catalog)
 
@@ -144,11 +149,11 @@ class TemplateCollectionTests(unittest.TestCase):
         collection = load_collection(self.root, self.catalog)
 
         with self.assertRaisesRegex(
-            CollectionError, "selection is ambiguous.*go, python"
+            CollectionError, "selection is ambiguous.*go, java, python"
         ):
             collection.select()
-        with self.assertRaisesRegex(CollectionError, "available: go, python"):
-            collection.select("java")
+        with self.assertRaisesRegex(CollectionError, "available: go, java, python"):
+            collection.select("rust")
 
     def test_maintainer_guide_preserves_the_runner_ownership_boundary(self) -> None:
         guide = (PROJECT_ROOT / "TEAM_TEMPLATE_COLLECTION.md").read_text()
@@ -158,8 +163,10 @@ class TemplateCollectionTests(unittest.TestCase):
             "team-templates.json",
             "templates/python/team-template.json",
             "templates/go/team-template.json",
+            "templates/java/team-template.json",
             "./validate-team --template go",
             "./release-team-template --template go manifest go-template-v1",
+            "--template java",
             "Team Templates",
             "Runner-owned Language Environments",
             "exact pinned Catalog Release",

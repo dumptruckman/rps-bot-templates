@@ -34,6 +34,17 @@
       "internal-shell.recipe": "internal-shell-build-recipe-v1@sha256:3875f006a4f660e811a97358f4017eb98073078138154631d4bc171890a36b3b",
       "internal-shell.workflow": "source-validation-workflow-v1@sha256:498a8c7c1ca85d84b9daea663cb2b0e952dcf634af3e756cd533cbed5913ed09",
       "internal-shell.wrapper": "internal-shell-wrapper-v1@sha256:3afe842359987474c65d685afbdb8338f4fda13d7febe006f30e1d1c853ebd35",
+      "java.base_runtime": "java-runtime-v1@sha256:a1360c05b0c4586227b7c40c34e7df26579308956266639d47cfdfc6ec4121d2",
+      "java.build_target": "java-build-target-v1@sha256:eeb351cb275b7b1074a5eb94e859fe58e60a804817553a0c3c3ed0ae2c61b0ef",
+      "java.build_toolchain": "java-build-toolchain-v1@sha256:a1360c05b0c4586227b7c40c34e7df26579308956266639d47cfdfc6ec4121d2",
+      "java.conformance": "java-conformance-v1@sha256:f29543b7644c0a65dc46ed3c88e5215b5177a2434f156f27130e81c613d4aa3f",
+      "java.dependency_definition": "java-dependencies-v1@sha256:5e8da0523e1ed6dde808a559d5d09dc873b09904a653b0c2fcefec69040734b6",
+      "java.entrypoint": "java-entrypoint-v1@sha256:0d093fae2bbedb01bffb5ca82e66af9131a153f56338892be571b70b43104044",
+      "java.platform": "java-oci-platforms-v1@sha256:a1360c05b0c4586227b7c40c34e7df26579308956266639d47cfdfc6ec4121d2",
+      "java.readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
+      "java.recipe": "java-build-recipe-v1@sha256:eeb351cb275b7b1074a5eb94e859fe58e60a804817553a0c3c3ed0ae2c61b0ef",
+      "java.workflow": "source-validation-workflow-v1@sha256:d9b654a9b96c4fa81836b4483c50fdbab175e4fb1154e0b21ee3569a5fd16788",
+      "java.wrapper": "java-wrapper-v1@sha256:78b75d21d9b3b6bc5420fc9d927d1d2fbe1987ab4204bc226ba73d5d566b2d2f",
       "python.base_runtime": "python-runtime-v2@sha256:e2e019156dba04246ee8e2d15765dc32af21f6c710828f56f7bc6536d62312b9",
       "python.build_target": "python-build-target-v1@sha256:8b805ad8a1541971fce3322a25d67dfc6f6e758d0f85033ab50c8974baf69696",
       "python.build_toolchain": "python-build-toolchain-v2@sha256:e2e019156dba04246ee8e2d15765dc32af21f6c710828f56f7bc6536d62312b9",
@@ -46,15 +57,15 @@
       "python.workflow": "source-validation-workflow-v1@sha256:a66d958d1eaf7ed7b36ecc3aa0192dd28a67a172ef810d42575a8c73b14ce6f4",
       "python.wrapper": "python-wrapper-v2@sha256:a82ae2481ad47d0697f318ccf09c5e8bd9597efbbca12f31366fc61d811baed7"
     },
-    "identity": "rps-language-environment-catalog-v1@sha256:9e78f85567c3ae4152bae4dec378643e3bf5572a0602ab7599b8bb486ce93ee8",
+    "identity": "rps-language-environment-catalog-v1@sha256:e90ce9d6e5eaad43451a7647ac25fa4623f2daf266f09c29eb3ce180be606801",
     "path": "language_environments/catalog-v1/catalog.json"
   },
   "format_version": "rps-catalog-compatibility-v1",
   "offline_bundle": {
-    "identity": "rps-runner-offline-bundle-v1@sha256:11946f50d599a8dc44e4821708ba3f4832a10dbe04a46a86965d8f9a9b4956e4"
+    "identity": "rps-runner-offline-bundle-v1@sha256:559c93d630b84bdb715035b64119e8d948944fc4fcc0570b6ba410f654f40c74"
   },
   "runner": {
-    "commit": "1380c98118153172331b141c3539dfb37da601db",
+    "commit": "098a5cfc8bbf562ff5a6c1781d0b3c1e147185d8",
     "package_version": "0.1.0"
   }
 }

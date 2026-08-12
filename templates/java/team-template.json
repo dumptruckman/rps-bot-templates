@@ -1,0 +1,12 @@
+{
+  "format_version": "rps-team-template-descriptor-v1",
+  "language_id": "java",
+  "language_environment": "java",
+  "team_source_path": "templates/java/team_source",
+  "participant_guidance_path": "templates/java/TEAM_GUIDE.md",
+  "build_and_test_entrypoint": "templates/java/build-and-test",
+  "version": "java-team-template-v1",
+  "expected_source_digest": "sha256:4ce5d6026eb4aa31cc8b001631c8253d826a9f1488f4151b676202d1327a68ba",
+  "release_tag": "java-template-v1",
+  "advisory_validation_workflow": ".github/workflows/team-advisory-validation.yml"
+}

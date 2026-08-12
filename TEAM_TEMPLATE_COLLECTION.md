@@ -17,8 +17,9 @@ language-owned build-and-test entrypoint, independently addressable Template
 Release, Advisory Validation workflow, and matching Runner-owned Language
 Environment. Paths are repository-relative POSIX paths.
 The [Python descriptor](templates/python/team-template.json) and
-[Go descriptor](templates/go/team-template.json) are independent instances of
-this layout.
+[Go descriptor](templates/go/team-template.json), and
+[Java descriptor](templates/java/team-template.json) are independent instances
+of this layout.
 
 Collection loading rejects duplicate language IDs, missing descriptors or bound
 files, unsafe paths, symbolic-link targets, mutable runtime references, and
@@ -54,6 +55,9 @@ RPS_CORE_PATH=.core/rps-tournament ./check-team-template --template go --mode do
 RPS_CORE_PATH=.core/rps-tournament ./validate-team --template go
 RPS_CORE_PATH=.core/rps-tournament ./release-team-template --template go manifest go-template-v1
 ```
+
+For the Java Template Release, use the same collection boundary with
+`--template java` and the independent `java-template-v1` release tag.
 
 ## Checklist for adding a Team Template
 

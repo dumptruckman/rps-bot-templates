@@ -17,11 +17,13 @@ exact Catalog Release; it does not redefine those assets.
 A fresh Team branch starts from one exact annotated Template Release of a
 selected Team Template. The collection includes independently released
 [Python](templates/python/team_source/strategy.py) and
-[Go](templates/go/team_source/strategy.go) starters.
+[Go](templates/go/team_source/strategy.go), and
+[Java](templates/java/team_source/Strategy.java) starters.
 Teams must change only the Team Source path named by their selected descriptor;
 the catalog and its build, wrapper, workflow, and protocol assets remain
-organizer-owned. See the [Python Team guide](templates/python/TEAM_GUIDE.md) or
-[Go Team guide](templates/go/TEAM_GUIDE.md)
+organizer-owned. See the [Python Team guide](templates/python/TEAM_GUIDE.md),
+[Go Team guide](templates/go/TEAM_GUIDE.md), or
+[Java Team guide](templates/java/TEAM_GUIDE.md)
 for the strategy contract, approved file types and limits, branch convention,
 and shared-repository honor policy.
 
@@ -68,6 +70,9 @@ and optional native check execute the same language-owned script. For Go:
 ./release-team-template --template go manifest go-template-v1
 ```
 
+Replace `go` with `java` and use `java-template-v1` for the independent Java
+Template Release.
+
 ## Immutable compatibility contract
 
 [`core-tool.lock.json`](core-tool.lock.json) is the compatibility claim copied
@@ -96,7 +101,7 @@ The ownership boundary is deliberate:
   tree is maintained in this repository.
 
 [`team-templates.json`](team-templates.json) is the collection-aware discovery
-index. Its Python and Go descriptors independently bind each starter's Team
+index. Its Python, Go, and Java descriptors independently bind each starter's Team
 Source, guidance, build-and-test entrypoint, matching Language Environment, and
 language-specific Template Release identity.
 
