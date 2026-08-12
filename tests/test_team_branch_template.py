@@ -14,8 +14,8 @@ import unittest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-TEAM_SOURCE = PROJECT_ROOT / "team_source"
-TEAM_GUIDE = PROJECT_ROOT / "TEAM_GUIDE.md"
+TEAM_SOURCE = PROJECT_ROOT / "templates/python/team_source"
+TEAM_GUIDE = PROJECT_ROOT / "templates/python/TEAM_GUIDE.md"
 CORE_PATH = Path(
     os.environ.get("RPS_CORE_PATH", PROJECT_ROOT / ".core" / "rps-tournament")
 )
@@ -131,7 +131,7 @@ class TeamBranchTemplateTests(unittest.TestCase):
         normalized_guide = " ".join(guide.split())
 
         required_statements = (
-            "`team_source/` is the only Team-editable directory",
+            "`templates/python/team_source/` is the only Team-editable directory",
             "`R`, `P`, or `S`",
             "protocol I/O, readiness, seeding, and process lifecycle",
             "`team/<team-slug>`",

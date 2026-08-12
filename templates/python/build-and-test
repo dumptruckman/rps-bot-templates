@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+
+if ! command -v python3 >/dev/null 2>&1; then
+  printf '%s\n' \
+    'Native toolchain failure: python3 is required; rerun check-team-template with --mode docker.' >&2
+  exit 2
+fi
+
+if ! python3 -c 'import sys; raise SystemExit(sys.version_info < (3, 9))'; then
+  printf '%s\n' \
+    'Native toolchain failure: Python 3.9 or newer is required; rerun check-team-template with --mode docker.' >&2
+  exit 2
+fi
+
+template_root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+temporary=$(mktemp -d "${TMPDIR:-/tmp}/rps-python-template.XXXXXX")
+trap 'rm -rf "$temporary"' EXIT HUP INT TERM
+
+PYTHONPYCACHEPREFIX="$temporary/pycache" \
+  python3 -m compileall -q "$template_root/team_source"
+printf '%s\n' 'Python starter build passed'
+
+PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX="$temporary/pycache" \
+  python3 -m unittest discover -s "$template_root/tests" -p 'test_*.py' -v
+printf '%s\n' 'Python starter tests passed'

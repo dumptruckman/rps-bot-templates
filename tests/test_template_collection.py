@@ -19,9 +19,9 @@ class TemplateCollectionTests(unittest.TestCase):
         for relative in (
             "team-templates.json",
             "templates/python/team-template.json",
-            "team_source/strategy.py",
-            "TEAM_GUIDE.md",
-            "validate-team",
+            "templates/python/team_source/strategy.py",
+            "templates/python/TEAM_GUIDE.md",
+            "templates/python/build-and-test",
             ".github/workflows/team-advisory-validation.yml",
         ):
             source = PROJECT_ROOT / relative
@@ -60,11 +60,17 @@ class TemplateCollectionTests(unittest.TestCase):
         self.assertEqual(collection.language_ids, ("python",))
         self.assertEqual(template.language_id, "python")
         self.assertEqual(template.language_environment, "python")
-        self.assertEqual(template.team_source_path, Path("team_source"))
-        self.assertEqual(template.participant_guidance_path, Path("TEAM_GUIDE.md"))
-        self.assertEqual(template.build_and_test_entrypoint, Path("validate-team"))
-        self.assertEqual(template.version, "python-team-template-v1")
-        self.assertEqual(template.release_tag, "template-v1")
+        self.assertEqual(
+            template.team_source_path, Path("templates/python/team_source")
+        )
+        self.assertEqual(
+            template.participant_guidance_path, Path("templates/python/TEAM_GUIDE.md")
+        )
+        self.assertEqual(
+            template.build_and_test_entrypoint, Path("templates/python/build-and-test")
+        )
+        self.assertEqual(template.version, "python-team-template-v2")
+        self.assertEqual(template.release_tag, "python-template-v2")
         self.assertRegex(template.expected_source_digest, r"^sha256:[0-9a-f]{64}$")
 
     def test_rejects_duplicate_ids_missing_descriptors_and_unsafe_paths(self) -> None:
@@ -98,7 +104,7 @@ class TemplateCollectionTests(unittest.TestCase):
         ):
             load_collection(self.root, self.catalog)
 
-        descriptor["team_source_path"] = "team_source"
+        descriptor["team_source_path"] = "templates/python/team_source"
         descriptor["language_environment"] = "go"
         self.write_json("templates/python/team-template.json", descriptor)
         with self.assertRaisesRegex(
@@ -160,7 +166,7 @@ class TemplateCollectionTests(unittest.TestCase):
             "team-templates.json",
             "templates/python/team-template.json",
             "./validate-team --template python",
-            "./release-team-template --template python manifest template-v1",
+            "./release-team-template --template python manifest python-template-v2",
             "Team Templates",
             "Runner-owned Language Environments",
             "exact pinned Catalog Release",

@@ -54,10 +54,19 @@ and create Team branches from the exact annotated release tag. Catalog Releases
 remain exclusively owned by `rps-tournament`.
 
 The [Team Template collection guide](TEAM_TEMPLATE_COLLECTION.md) documents the
-new language-indexed maintainer interface and its compatibility boundary. During
-the expand phase, `./validate-team --template python` and
-`./release-team-template --template python manifest template-v1` coexist with
-the unchanged singular Python commands.
+language-indexed maintainer interface and its compatibility boundary. Python is
+now migrated to `templates/python/`. Its Docker acceptance check and optional
+native check execute the same language-owned script:
+
+```sh
+./check-team-template --template python --mode docker
+./check-team-template --template python --mode native
+./validate-team --template python
+./release-team-template --template python manifest python-template-v2
+```
+
+The former root-level Python paths coexist temporarily until the contraction
+ticket removes the singular interface.
 
 ## Immutable compatibility contract
 
@@ -92,8 +101,9 @@ Template commit, Team Template digest, workflow identity, and complete catalog
 compatibility claim.
 
 [`team-templates.json`](team-templates.json) is the collection-aware discovery
-index. Its descriptor for Python binds the same existing source and release
-identity without moving or removing the legacy paths.
+index. Its Python descriptor binds the migrated Team Source, guidance,
+build-and-test entrypoint, matching Language Environment, and independently
+addressable `python-template-v2` release identity.
 
 ## Verify a compatibility-lock change
 

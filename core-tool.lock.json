@@ -1,36 +1,49 @@
 {
-  "format_version": "rps-catalog-compatibility-v1",
-  "runner": {
-    "commit": "e032114ac567fa6a454796862df3fed855b29058",
-    "package_version": "0.1.0"
-  },
   "catalog": {
-    "path": "language_environments/catalog-v1/catalog.json",
-    "identity": "rps-language-environment-catalog-v1@sha256:8724e24a870b6004a01bca95d23059c94cb9abe2c73e15018db2ad0d0a02c181",
     "assets": {
-      "contract-fixture.base_runtime": "contract-runtime-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.build_target": "contract-build-target-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.conformance": "contract-conformance-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.dependency_definition": "contract-dependencies-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.entrypoint": "contract-entrypoint-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.platform": "oci-platforms-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.readiness": "wrapper-readiness-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.recipe": "contract-build-recipe-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.workflow": "source-validation-workflow-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "contract-fixture.wrapper": "contract-wrapper-v1@sha256:1c80105b1826364b2b56b7d2ee4ce64941b3acdc9c70116d43d295dd250f540a",
-      "python.base_runtime": "python-runtime-v1@sha256:e5a635c659f52ff7433c1ab4f8d086a8b66689a84fe522e85b72b29801005b03",
-      "python.build_target": "python-build-target-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
-      "python.conformance": "python-conformance-v1@sha256:5122994b6067b438de7b9bc1720cb94296cda3a022dc629bc9269e3f1968e15b",
+      "contract-fixture.base_runtime": "contract-runtime-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.build_target": "contract-build-target-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.build_toolchain": "contract-build-toolchain-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.conformance": "contract-conformance-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.dependency_definition": "contract-dependencies-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.entrypoint": "contract-entrypoint-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.platform": "oci-platforms-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.readiness": "wrapper-readiness-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.recipe": "contract-build-recipe-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.workflow": "source-validation-workflow-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "contract-fixture.wrapper": "contract-wrapper-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "internal-shell.base_runtime": "internal-shell-runtime-v1@sha256:c8c91b683287d06ecc407ef4f568c2c4db18223d91541e1f67343138e028b62c",
+      "internal-shell.build_target": "internal-shell-build-target-v1@sha256:3875f006a4f660e811a97358f4017eb98073078138154631d4bc171890a36b3b",
+      "internal-shell.build_toolchain": "internal-shell-build-toolchain-v1@sha256:c8c91b683287d06ecc407ef4f568c2c4db18223d91541e1f67343138e028b62c",
+      "internal-shell.conformance": "internal-shell-conformance-v1@sha256:664168210a06c8e77b15e9166e2ee394ad1f0bff05e7d31e8014361110c94f9e",
+      "internal-shell.dependency_definition": "internal-shell-dependencies-v1@sha256:86ba9f0599a0a04a165c364391c9cf136fd681a0cde46aab9edc92d05b56b437",
+      "internal-shell.entrypoint": "internal-shell-entrypoint-v1@sha256:8a54f98b7e6490dadf2922b830eaaa71ba3b4cc448482125e1c1fc7d808e52c2",
+      "internal-shell.platform": "oci-platforms-v1@sha256:c8c91b683287d06ecc407ef4f568c2c4db18223d91541e1f67343138e028b62c",
+      "internal-shell.readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
+      "internal-shell.recipe": "internal-shell-build-recipe-v1@sha256:3875f006a4f660e811a97358f4017eb98073078138154631d4bc171890a36b3b",
+      "internal-shell.workflow": "source-validation-workflow-v1@sha256:498a8c7c1ca85d84b9daea663cb2b0e952dcf634af3e756cd533cbed5913ed09",
+      "internal-shell.wrapper": "internal-shell-wrapper-v1@sha256:3afe842359987474c65d685afbdb8338f4fda13d7febe006f30e1d1c853ebd35",
+      "python.base_runtime": "python-runtime-v2@sha256:e2e019156dba04246ee8e2d15765dc32af21f6c710828f56f7bc6536d62312b9",
+      "python.build_target": "python-build-target-v1@sha256:8b805ad8a1541971fce3322a25d67dfc6f6e758d0f85033ab50c8974baf69696",
+      "python.build_toolchain": "python-build-toolchain-v2@sha256:e2e019156dba04246ee8e2d15765dc32af21f6c710828f56f7bc6536d62312b9",
+      "python.conformance": "python-conformance-v1@sha256:0541ac0e19bedc42241e65ffb462d894833c6c30d268fa054162bdff8615c057",
       "python.dependency_definition": "python-dependencies-v1@sha256:9f8c394be1f741a5351379bab966dec8e813ce017cb4e640d1f100e40e461f5f",
       "python.entrypoint": "python-entrypoint-v1@sha256:e663e70bb05c143591a06d352e325cb181136c5910fe62717056b0ed3fcb1e08",
-      "python.platform": "oci-platforms-v1@sha256:e5a635c659f52ff7433c1ab4f8d086a8b66689a84fe522e85b72b29801005b03",
+      "python.platform": "python-oci-platforms-v2@sha256:e2e019156dba04246ee8e2d15765dc32af21f6c710828f56f7bc6536d62312b9",
       "python.readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
-      "python.recipe": "python-build-recipe-v1@sha256:9c8e64f91dbbe89ed36d94787936cde16775f4f92c2eb3146a8bdb9eceafd8cc",
+      "python.recipe": "python-build-recipe-v1@sha256:8b805ad8a1541971fce3322a25d67dfc6f6e758d0f85033ab50c8974baf69696",
       "python.workflow": "source-validation-workflow-v1@sha256:a66d958d1eaf7ed7b36ecc3aa0192dd28a67a172ef810d42575a8c73b14ce6f4",
       "python.wrapper": "python-wrapper-v2@sha256:a82ae2481ad47d0697f318ccf09c5e8bd9597efbbca12f31366fc61d811baed7"
-    }
+    },
+    "identity": "rps-language-environment-catalog-v1@sha256:bec500361e5e5d9526d6342bac34b5ace37557496884924c1d1d41fa00a9c2cb",
+    "path": "language_environments/catalog-v1/catalog.json"
   },
+  "format_version": "rps-catalog-compatibility-v1",
   "offline_bundle": {
-    "identity": "rps-runner-offline-bundle-v1@sha256:2ab31b58e5322f920e9b1b70ffc3ad7fdafd31f9adb7550410ea6049a4d8297b"
+    "identity": "rps-runner-offline-bundle-v1@sha256:03444cb9751bfebe0d32be173ebfc1bd1f9f61f0cf22107193239c7bdbefd076"
+  },
+  "runner": {
+    "commit": "1edc8e133e5aca0e93357bb42b5ecfbb22a667fd",
+    "package_version": "0.1.0"
   }
 }

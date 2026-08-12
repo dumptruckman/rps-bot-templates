@@ -4,9 +4,10 @@ The collection is the repository-owned inventory of participant-facing Team
 Templates. [`team-templates.json`](team-templates.json) is the discovery index;
 its stable language IDs point to descriptors such as
 [`templates/python/team-template.json`](templates/python/team-template.json).
-The Python descriptor currently binds the existing root-level Team Source and
-guidance during the expand phase. Those legacy paths remain in place until the
-separate migration and contraction work is complete.
+The Python descriptor binds the migrated source, tests, guidance, and
+build-and-test script below `templates/python/`. The former root-level Python
+paths remain temporarily as legacy compatibility material until the separate
+contraction work is complete.
 
 Each descriptor binds one language ID to:
 
@@ -27,14 +28,18 @@ index contains more than one template.
 The collection-aware forms select a descriptor by stable language ID:
 
 ```sh
+./check-team-template --template python --mode docker
+./check-team-template --template python --mode native
 ./validate-team --template python
-./release-team-template --template python manifest template-v1
+./release-team-template --template python manifest python-template-v2
 ```
 
-Release creation and verification accept the same `--template python` option.
-During this expand step, omitting the option preserves the existing singular
-Python validation and release interfaces for Team branches, workflows, and
-clean-clone checks.
+Docker and native modes both execute `templates/python/build-and-test`; Docker
+selects the immutable development toolchain for its native platform from the
+matching Language Environment in the exact pinned Catalog Release. Release
+creation and verification accept the same `--template python` option. Omitting
+the option temporarily preserves the older singular Python validation and
+release interfaces.
 
 Both selected commands first verify `core-tool.lock.json` and the materialized
 Runner checkout. They then derive Team Source, release metadata, and the

@@ -242,7 +242,7 @@ class TeamValidationCommandTests(unittest.TestCase):
         source_call = self.calls()[0]["arguments"]
         self.assertEqual(
             source_call[source_call.index("--source") + 1],
-            str(PROJECT_ROOT / "team_source"),
+            str(PROJECT_ROOT / "templates/python/team_source"),
         )
         self.assertEqual(
             source_call[source_call.index("--environment") + 1], "python"

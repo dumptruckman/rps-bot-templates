@@ -32,19 +32,18 @@ workflow action references. It refuses a dirty Template checkout, mismatched
 catalog lock, changed Team Template, mutable action reference, reused tag, or
 tag name that does not match `team-template.json`.
 
-Maintainers can exercise the collection-aware interface for the same Python
-release during the expand phase:
+The migrated Python collection entry has its own release identity:
 
 ```text
-./release-team-template --template python manifest template-v1
-./release-team-template --template python create template-v1
-./release-team-template --template python verify template-v1
+./release-team-template --template python manifest python-template-v2
+./release-team-template --template python create python-template-v2
+./release-team-template --template python verify python-template-v2
 ```
 
-The selected form derives Team Source, participant guidance, build-and-test
-entrypoint, Template Release identity, and matching Language Environment from
-the indexed descriptor. The no-option commands remain the legacy Python
-interface until the collection migration is complete.
+The selected form derives migrated Team Source, participant guidance,
+build-and-test entrypoint, Template Release identity, and matching Language
+Environment from the indexed descriptor. The no-option `template-v1` commands
+remain a legacy Python interface only until collection contraction is complete.
 
 Push the exact Template commit and annotated tag together. Do not move, delete,
 or recreate a published tag; its annotation is the Template Release manifest.

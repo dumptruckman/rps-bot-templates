@@ -172,62 +172,65 @@ class TemplateReleaseTests(unittest.TestCase):
 
     def test_selected_template_manifest_derives_collection_identity(self) -> None:
         completed = self.run_command(
-            "--template", "python", "manifest", "template-v1"
+            "--template", "python", "manifest", "python-template-v2"
         )
 
         self.assertEqual(completed.returncode, 0, completed.stderr)
         template = json.loads(completed.stdout)["team_template"]
         self.assertEqual(template["language_id"], "python")
         self.assertEqual(template["language_environment"], "python")
-        self.assertEqual(template["path"], "team_source")
-        self.assertEqual(template["participant_guidance_path"], "TEAM_GUIDE.md")
-        self.assertEqual(template["build_and_test_entrypoint"], "validate-team")
+        self.assertEqual(template["path"], "templates/python/team_source")
+        self.assertEqual(
+            template["participant_guidance_path"], "templates/python/TEAM_GUIDE.md"
+        )
+        self.assertEqual(
+            template["build_and_test_entrypoint"], "templates/python/build-and-test"
+        )
 
     def test_selected_template_can_create_and_verify_its_own_release(self) -> None:
         repository = self.make_release_repository()
 
         created = self.run_repository_command(
-            repository, "--template", "python", "create", "template-v1"
+            repository, "--template", "python", "create", "python-template-v2"
         )
         self.assertEqual(created.returncode, 0, created.stderr)
 
         verified = self.run_repository_command(
-            repository, "--template", "python", "verify", "template-v1"
+            repository, "--template", "python", "verify", "python-template-v2"
         )
         self.assertEqual(verified.returncode, 0, verified.stderr)
         self.assertEqual(json.loads(verified.stdout), json.loads(created.stdout))
 
-    def test_legacy_and_selected_interfaces_verify_each_others_releases(self) -> None:
+    def test_legacy_and_migrated_python_releases_have_independent_identities(self) -> None:
         selected_repository = self.make_release_repository("-selected")
         selected = self.run_repository_command(
             selected_repository,
             "--template",
             "python",
             "create",
-            "template-v1",
+            "python-template-v2",
         )
         self.assertEqual(selected.returncode, 0, selected.stderr)
-        legacy_verification = self.run_repository_command(
-            selected_repository, "verify", "template-v1"
-        )
-        self.assertEqual(
-            legacy_verification.returncode, 0, legacy_verification.stderr
-        )
+        selected_manifest = json.loads(selected.stdout)
 
         legacy_repository = self.make_release_repository("-legacy")
         legacy = self.run_repository_command(
             legacy_repository, "create", "template-v1"
         )
         self.assertEqual(legacy.returncode, 0, legacy.stderr)
-        selected_verification = self.run_repository_command(
-            legacy_repository,
-            "--template",
-            "python",
-            "verify",
-            "template-v1",
+        legacy_manifest = json.loads(legacy.stdout)
+
+        self.assertNotEqual(
+            selected_manifest["template_repository"]["tag"],
+            legacy_manifest["template_repository"]["tag"],
         )
-        self.assertEqual(
-            selected_verification.returncode, 0, selected_verification.stderr
+        self.assertNotEqual(
+            selected_manifest["team_template"]["version"],
+            legacy_manifest["team_template"]["version"],
+        )
+        self.assertNotEqual(
+            selected_manifest["team_template"]["path"],
+            legacy_manifest["team_template"]["path"],
         )
 
     def test_create_and_verify_use_the_expected_annotated_tag(self) -> None:
@@ -339,7 +342,7 @@ class TemplateReleaseTests(unittest.TestCase):
             with self.subTest(statement=statement):
                 self.assertIn(statement, normalized)
 
-        self.assertIn('tags: ["template-v*"]', workflow)
+        self.assertIn('tags: ["template-v*", "*-template-v*"]', workflow)
         self.assertIn("fetch-depth: 0", workflow)
         self.assertIn('./release-team-template verify "${GITHUB_REF_NAME}"', workflow)
         self.assertNotIn("catalog-v*", workflow)

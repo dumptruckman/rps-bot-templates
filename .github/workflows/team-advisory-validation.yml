@@ -43,13 +43,13 @@ jobs:
           RPS_CORE_PATH: ${{ github.workspace }}/.core/rps-tournament
         run: |
           mkdir -p .advisory
-          release_tag="$(python3 -c 'import json; print(json.load(open("team-template.json"))["release_tag"])')"
+          release_tag="$(python3 -c 'import json; print(json.load(open("templates/python/team-template.json"))["release_tag"])')"
           release_commit="$(git rev-parse "${release_tag}^{}")"
           git worktree add --detach .template-release "${release_commit}"
-          .template-release/release-team-template verify "${release_tag}" \
+          .template-release/release-team-template --template python verify "${release_tag}" \
             > .advisory/template-release.json
           git diff --quiet "${release_commit}" "${GITHUB_SHA}" \
-            -- . ':(exclude)team_source/**' || {
+            -- . ':(exclude)templates/python/team_source/**' || {
               echo "Team branch changed files outside the released Team Source boundary" >&2
               exit 1
             }
@@ -57,7 +57,7 @@ jobs:
         if: steps.template_release.outcome == 'success'
         run: |
           test "$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')" = "$PLATFORM"
-      - name: Cache the pinned Linux/AMD64 base runtime
+      - name: Cache the pinned Linux/AMD64 toolchain and runtime
         if: steps.template_release.outcome == 'success'
         run: |
           runtime_reference="$(python3 - <<'PY'
@@ -70,10 +70,16 @@ jobs:
           runtimes = json.loads(
               catalog_contract.environment("python").assets["base_runtime"].content
           )
-          print(runtimes["platforms"]["linux/amd64"]["image"])
+          selected = runtimes["platforms"]["linux/amd64"]
+          print(selected["build_toolchain"]["image"])
           PY
           )"
           docker pull --platform "$PLATFORM" "$runtime_reference"
+      - name: Build and test the Python Team Template in its pinned toolchain
+        if: steps.template_release.outcome == 'success'
+        env:
+          RPS_CORE_PATH: ${{ github.workspace }}/.core/rps-tournament
+        run: ./check-team-template --template python --mode docker
       - name: Freeze Team Source
         id: source
         if: steps.template_release.outcome == 'success'
@@ -82,7 +88,7 @@ jobs:
           python3 -m rps_runner.source_cli \
             --catalog "$CATALOG" \
             --environment python \
-            --source team_source \
+            --source templates/python/team_source \
             --bundle .advisory/source-bundle
       - name: Build disposable Linux/AMD64 confidence image
         id: build
@@ -178,7 +184,7 @@ jobs:
               )
               runtime_reference = runtime_catalog["platforms"][
                   os.environ["PLATFORM"]
-              ]["image"]
+              ]["execution_runtime"]["image"]
               fallback_validation_identities = {
                   "catalog": catalog_contract.identity,
                   "core_tool": _core_tool_identity(),
