@@ -161,7 +161,9 @@ class TeamValidationCommandTests(unittest.TestCase):
         path.write_text(textwrap.dedent(source).lstrip())
         path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
-    def run_command(self, **environment: str) -> subprocess.CompletedProcess[str]:
+    def run_command(
+        self, *arguments: str, **environment: str
+    ) -> subprocess.CompletedProcess[str]:
         process_environment = os.environ.copy()
         process_environment.update(
             {
@@ -173,7 +175,7 @@ class TeamValidationCommandTests(unittest.TestCase):
         )
         process_environment.update(environment)
         return subprocess.run(
-            [str(COMMAND)],
+            [str(COMMAND), *arguments],
             cwd=PROJECT_ROOT,
             env=process_environment,
             capture_output=True,
@@ -231,6 +233,19 @@ class TeamValidationCommandTests(unittest.TestCase):
         self.assertNotIn(
             str(PROJECT_ROOT / "language_environments"),
             json.dumps(calls),
+        )
+
+    def test_selected_template_derives_source_and_environment_from_descriptor(self) -> None:
+        completed = self.run_command("--template", "python")
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        source_call = self.calls()[0]["arguments"]
+        self.assertEqual(
+            source_call[source_call.index("--source") + 1],
+            str(PROJECT_ROOT / "team_source"),
+        )
+        self.assertEqual(
+            source_call[source_call.index("--environment") + 1], "python"
         )
 
     def test_team_facing_diagnostics_name_each_failure_area(self) -> None:

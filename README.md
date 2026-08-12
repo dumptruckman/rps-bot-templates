@@ -53,6 +53,12 @@ publish the participant-facing starter, pin one Runner-owned Catalog Release,
 and create Team branches from the exact annotated release tag. Catalog Releases
 remain exclusively owned by `rps-tournament`.
 
+The [Team Template collection guide](TEAM_TEMPLATE_COLLECTION.md) documents the
+new language-indexed maintainer interface and its compatibility boundary. During
+the expand phase, `./validate-team --template python` and
+`./release-team-template --template python manifest template-v1` coexist with
+the unchanged singular Python commands.
+
 ## Immutable compatibility contract
 
 [`core-tool.lock.json`](core-tool.lock.json) is the compatibility claim copied
@@ -84,6 +90,10 @@ version, participant-facing source path, Advisory Validation workflow, and
 release tag. The annotated tag manifest binds those values to the exact
 Template commit, Team Template digest, workflow identity, and complete catalog
 compatibility claim.
+
+[`team-templates.json`](team-templates.json) is the collection-aware discovery
+index. Its descriptor for Python binds the same existing source and release
+identity without moving or removing the legacy paths.
 
 ## Verify a compatibility-lock change
 

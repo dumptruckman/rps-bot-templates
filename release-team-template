@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, Mapping, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 from catalog_compatibility import (
     CompatibilityError,
@@ -19,6 +19,7 @@ from catalog_compatibility import (
     verify_bundle,
     verify_checkout,
 )
+from template_collection import CollectionError, load_collection
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -68,7 +69,35 @@ def _relative_path(value: object, label: str) -> PurePosixPath:
     return path
 
 
-def _descriptor(tag: str) -> Dict[str, str]:
+def _descriptor(
+    tag: str,
+    language_id: Optional[str] = None,
+    catalog_path: Optional[Path] = None,
+) -> Dict[str, str]:
+    if language_id is not None:
+        if catalog_path is None:
+            raise ReleaseError("selected Team Template requires a verified catalog")
+        try:
+            selected = load_collection(PROJECT_ROOT, catalog_path).select(language_id)
+        except CollectionError as error:
+            raise ReleaseError("Team Template selection failed: " + str(error)) from error
+        if selected.release_tag != tag:
+            raise ReleaseError(
+                "release tag " + repr(tag) + " does not match "
+                + selected.descriptor_path.as_posix()
+            )
+        return {
+            "format_version": "rps-team-template-v1",
+            "version": selected.version,
+            "path": selected.team_source_path.as_posix(),
+            "expected_source_digest": selected.expected_source_digest,
+            "release_tag": selected.release_tag,
+            "advisory_validation_workflow": selected.advisory_validation_workflow.as_posix(),
+            "language_id": selected.language_id,
+            "language_environment": selected.language_environment,
+            "participant_guidance_path": selected.participant_guidance_path.as_posix(),
+            "build_and_test_entrypoint": selected.build_and_test_entrypoint.as_posix(),
+        }
     raw = _read_object(DESCRIPTOR_PATH, "Team Template descriptor")
     expected_fields = {
         "format_version",
@@ -177,7 +206,7 @@ def _validated_source_digest(
                 "--catalog",
                 str(catalog),
                 "--environment",
-                "python",
+                descriptor.get("language_environment", "python"),
                 "--source",
                 str(source),
                 "--bundle",
@@ -251,16 +280,31 @@ def _team_template(
         ),
         "digest": digest,
         "files": files,
+        **(
+            {
+                "language_id": descriptor["language_id"],
+                "language_environment": descriptor["language_environment"],
+                "participant_guidance_path": descriptor[
+                    "participant_guidance_path"
+                ],
+                "build_and_test_entrypoint": descriptor[
+                    "build_and_test_entrypoint"
+                ],
+            }
+            if "language_id" in descriptor
+            else {}
+        ),
     }
 
 
-def build_manifest(tag: str) -> Dict[str, Any]:
+def build_manifest(tag: str, language_id: Optional[str] = None) -> Dict[str, Any]:
     if not TAG_NAME.fullmatch(tag):
         raise ReleaseError(
             "release tag must use only letters, digits, dots, underscores, and hyphens"
         )
-    descriptor = _descriptor(tag)
     compatibility = _catalog_compatibility()
+    catalog_path = _core_path() / str(compatibility["catalog"]["path"])
+    descriptor = _descriptor(tag, language_id, catalog_path)
     _verify_immutable_action_references()
     workflow_relative = _relative_path(
         descriptor["advisory_validation_workflow"],
@@ -291,7 +335,7 @@ def _require_clean_repository() -> None:
         raise ReleaseError("repository must be clean before creating or verifying a release")
 
 
-def _create_release(tag: str) -> Dict[str, Any]:
+def _create_release(tag: str, language_id: Optional[str] = None) -> Dict[str, Any]:
     _require_clean_repository()
     try:
         _run("git", "rev-parse", "--verify", "refs/tags/" + tag)
@@ -299,7 +343,7 @@ def _create_release(tag: str) -> Dict[str, Any]:
         pass
     else:
         raise ReleaseError("release tag " + repr(tag) + " already exists")
-    manifest = build_manifest(tag)
+    manifest = build_manifest(tag, language_id)
     annotation = json.dumps(manifest, indent=2, sort_keys=True)
     _run("git", "tag", "--no-sign", "--annotate", tag, "--message", annotation)
     return manifest
@@ -331,7 +375,7 @@ def _read_tag_manifest(tag: str) -> Tuple[str, Dict[str, Any]]:
     return target, manifest
 
 
-def _verify_release(tag: str) -> Dict[str, Any]:
+def _verify_release(tag: str, language_id: Optional[str] = None) -> Dict[str, Any]:
     _require_clean_repository()
     target, recorded = _read_tag_manifest(tag)
     head = _run("git", "rev-parse", "HEAD")
@@ -339,8 +383,45 @@ def _verify_release(tag: str) -> Dict[str, Any]:
         raise ReleaseError(
             "release tag " + repr(tag) + " targets the wrong Template repository commit"
         )
+    recorded_template = recorded.get("team_template")
+    if not isinstance(recorded_template, dict):
+        raise ReleaseError("release manifest omits the Team Template identity")
+    recorded_language = recorded_template.get("language_id")
+    if recorded_language is not None and not isinstance(recorded_language, str):
+        raise ReleaseError("release manifest has an invalid language ID")
     try:
-        expected = build_manifest(tag)
+        if language_id is not None:
+            selected = build_manifest(tag, language_id)
+            if recorded_language is None:
+                legacy = build_manifest(tag)
+                selected_template = selected["team_template"]
+                legacy_template = legacy["team_template"]
+                shared_fields = (
+                    "version",
+                    "path",
+                    "expected_source_digest",
+                    "digest",
+                    "files",
+                )
+                if any(
+                    selected_template[field] != legacy_template[field]
+                    for field in shared_fields
+                ):
+                    raise ReleaseError(
+                        "selected Team Template does not match the legacy release identity"
+                    )
+                expected = legacy
+            else:
+                if recorded_language != language_id:
+                    raise ReleaseError(
+                        "release language "
+                        + repr(recorded_language)
+                        + " does not match selected Team Template "
+                        + repr(language_id)
+                    )
+                expected = selected
+        else:
+            expected = build_manifest(tag, recorded_language)
     except ReleaseError as error:
         if "Team Template Source Digest mismatch" in str(error):
             raise ReleaseError(
@@ -358,16 +439,21 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Create or verify an immutable Template Release"
     )
+    parser.add_argument(
+        "--template",
+        metavar="LANGUAGE_ID",
+        help="select a Team Template from team-templates.json",
+    )
     parser.add_argument("command", choices=("manifest", "create", "verify"))
     parser.add_argument("tag")
     arguments = parser.parse_args()
     try:
         if arguments.command == "manifest":
-            manifest = build_manifest(arguments.tag)
+            manifest = build_manifest(arguments.tag, arguments.template)
         elif arguments.command == "create":
-            manifest = _create_release(arguments.tag)
+            manifest = _create_release(arguments.tag, arguments.template)
         else:
-            manifest = _verify_release(arguments.tag)
+            manifest = _verify_release(arguments.tag, arguments.template)
     except ReleaseError as error:
         print("Template Release failure: " + str(error), file=sys.stderr)
         return 1

@@ -1,0 +1,9 @@
+{
+  "format_version": "rps-team-template-index-v1",
+  "templates": [
+    {
+      "language_id": "python",
+      "descriptor": "templates/python/team-template.json"
+    }
+  ]
+}
