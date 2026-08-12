@@ -26,6 +26,10 @@ class TemplateCollectionTests(unittest.TestCase):
             "templates/java/team_source/Strategy.java",
             "templates/java/TEAM_GUIDE.md",
             "templates/java/build-and-test",
+            "templates/typescript/team-template.json",
+            "templates/typescript/team_source/strategy.ts",
+            "templates/typescript/TEAM_GUIDE.md",
+            "templates/typescript/build-and-test",
             "templates/python/team-template.json",
             "templates/python/team_source/strategy.py",
             "templates/python/TEAM_GUIDE.md",
@@ -47,6 +51,10 @@ class TemplateCollectionTests(unittest.TestCase):
                     },
                     "go": {"language": "go", "contract_only": False},
                     "java": {"language": "java", "contract_only": False},
+                    "typescript": {
+                        "language": "typescript",
+                        "contract_only": False,
+                    },
                 }
             },
         )
@@ -67,7 +75,9 @@ class TemplateCollectionTests(unittest.TestCase):
 
         template = collection.select("python")
 
-        self.assertEqual(collection.language_ids, ("go", "java", "python"))
+        self.assertEqual(
+            collection.language_ids, ("go", "java", "python", "typescript")
+        )
         self.assertEqual(template.language_id, "python")
         self.assertEqual(template.language_environment, "python")
         self.assertEqual(
@@ -149,10 +159,12 @@ class TemplateCollectionTests(unittest.TestCase):
         collection = load_collection(self.root, self.catalog)
 
         with self.assertRaisesRegex(
-            CollectionError, "selection is ambiguous.*go, java, python"
+            CollectionError, "selection is ambiguous.*go, java, python, typescript"
         ):
             collection.select()
-        with self.assertRaisesRegex(CollectionError, "available: go, java, python"):
+        with self.assertRaisesRegex(
+            CollectionError, "available: go, java, python, typescript"
+        ):
             collection.select("rust")
 
     def test_maintainer_guide_preserves_the_runner_ownership_boundary(self) -> None:
@@ -164,9 +176,11 @@ class TemplateCollectionTests(unittest.TestCase):
             "templates/python/team-template.json",
             "templates/go/team-template.json",
             "templates/java/team-template.json",
+            "templates/typescript/team-template.json",
             "./validate-team --template go",
             "./release-team-template --template go manifest go-template-v1",
             "--template java",
+            "--template typescript",
             "Team Templates",
             "Runner-owned Language Environments",
             "exact pinned Catalog Release",

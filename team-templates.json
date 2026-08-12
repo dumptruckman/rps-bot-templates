@@ -12,6 +12,10 @@
     {
       "language_id": "java",
       "descriptor": "templates/java/team-template.json"
+    },
+    {
+      "language_id": "typescript",
+      "descriptor": "templates/typescript/team-template.json"
     }
   ]
 }

@@ -18,12 +18,14 @@ A fresh Team branch starts from one exact annotated Template Release of a
 selected Team Template. The collection includes independently released
 [Python](templates/python/team_source/strategy.py) and
 [Go](templates/go/team_source/strategy.go), and
-[Java](templates/java/team_source/Strategy.java) starters.
+[Java](templates/java/team_source/Strategy.java), and
+[TypeScript](templates/typescript/team_source/strategy.ts) starters.
 Teams must change only the Team Source path named by their selected descriptor;
 the catalog and its build, wrapper, workflow, and protocol assets remain
 organizer-owned. See the [Python Team guide](templates/python/TEAM_GUIDE.md),
 [Go Team guide](templates/go/TEAM_GUIDE.md), or
-[Java Team guide](templates/java/TEAM_GUIDE.md)
+[Java Team guide](templates/java/TEAM_GUIDE.md), or
+[TypeScript Team guide](templates/typescript/TEAM_GUIDE.md)
 for the strategy contract, approved file types and limits, branch convention,
 and shared-repository honor policy.
 

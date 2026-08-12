@@ -18,7 +18,8 @@ Release, Advisory Validation workflow, and matching Runner-owned Language
 Environment. Paths are repository-relative POSIX paths.
 The [Python descriptor](templates/python/team-template.json) and
 [Go descriptor](templates/go/team-template.json), and
-[Java descriptor](templates/java/team-template.json) are independent instances
+[Java descriptor](templates/java/team-template.json), and
+[TypeScript descriptor](templates/typescript/team-template.json) are independent instances
 of this layout.
 
 Collection loading rejects duplicate language IDs, missing descriptors or bound
@@ -58,6 +59,8 @@ RPS_CORE_PATH=.core/rps-tournament ./release-team-template --template go manifes
 
 For the Java Template Release, use the same collection boundary with
 `--template java` and the independent `java-template-v1` release tag.
+TypeScript uses `--template typescript` and the independent
+`typescript-template-v1` release tag.
 
 ## Checklist for adding a Team Template
 

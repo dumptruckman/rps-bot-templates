@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+if ! command -v node >/dev/null 2>&1; then
+  printf '%s\n' \
+    'Native toolchain failure: Node.js 24 is required; rerun check-team-template with --mode docker.' >&2
+  exit 2
+fi
+
+node_major=$(node --version | sed 's/^v//' | cut -d. -f1)
+if [ "$node_major" -lt 24 ]; then
+  printf '%s\n' \
+    'Native toolchain failure: Node.js 24 or newer is required; rerun check-team-template with --mode docker.' >&2
+  exit 2
+fi
+
+template_root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+temporary=$(mktemp -d "${TMPDIR:-/tmp}/rps-typescript-template.XXXXXX")
+trap 'rm -rf "$temporary"' EXIT HUP INT TERM
+
+if [ -n "${RPS_DEPENDENCY_DEFINITION:-}" ]; then
+  tar -xzf "$RPS_DEPENDENCY_DEFINITION" -C "$temporary"
+  compiler="$temporary/package/lib/tsc.js"
+  set -- node "$compiler"
+elif command -v tsc >/dev/null 2>&1 && [ "$(tsc --version)" = "Version 6.0.3" ]; then
+  compiler=$(command -v tsc)
+  set -- "$compiler"
+else
+  printf '%s\n' \
+    'Native toolchain failure: TypeScript 6.0.3 is required; rerun check-team-template with --mode docker.' >&2
+  exit 2
+fi
+
+mkdir -p "$temporary/source/team_source" "$temporary/source/tests" "$temporary/dist"
+cp -R "$template_root/team_source/." "$temporary/source/team_source/"
+cp "$template_root/tests/strategy.test.ts" "$temporary/source/tests/strategy.test.ts"
+
+"$@" --strict --target ES2022 --module commonjs \
+  --rootDir "$temporary/source" --outDir "$temporary/dist" \
+  "$temporary/source/team_source/"*.ts "$temporary/source/tests/strategy.test.ts"
+printf '%s\n' 'TypeScript starter build passed'
+
+node "$temporary/dist/tests/strategy.test.js"

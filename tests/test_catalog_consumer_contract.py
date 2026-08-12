@@ -4,6 +4,7 @@ import configparser
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -14,7 +15,9 @@ import unittest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 LOCK_PATH = PROJECT_ROOT / "core-tool.lock.json"
-MATERIALIZED_RUNNER = PROJECT_ROOT / ".core" / "rps-tournament"
+MATERIALIZED_RUNNER = Path(
+    os.environ.get("RPS_CORE_PATH", PROJECT_ROOT / ".core" / "rps-tournament")
+)
 FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
 CONTENT_IDENTITY = re.compile(r"^[a-z0-9-]+@sha256:[0-9a-f]{64}$")
 
@@ -81,7 +84,7 @@ class CatalogConsumerContractTests(unittest.TestCase):
         self.assertEqual(set(runner), {"commit", "package_version"})
         self.assertRegex(runner["commit"], FULL_COMMIT)
         self.assertEqual(
-            runner["commit"], "098a5cfc8bbf562ff5a6c1781d0b3c1e147185d8"
+            runner["commit"], "791cb8551cd761b2df147a5f9ac1b6040cfa201c"
         )
         self.assertEqual(runner["package_version"], "0.1.0")
 
@@ -93,7 +96,7 @@ class CatalogConsumerContractTests(unittest.TestCase):
         self.assertEqual(
             catalog_claim["identity"],
             "rps-language-environment-catalog-v1@sha256:"
-            "e90ce9d6e5eaad43451a7647ac25fa4623f2daf266f09c29eb3ce180be606801",
+            "c092fe676e170446d60c512d1e27daf32fc5c515b2ec889a5c1aec9df54e288d",
         )
         self.assertTrue(catalog_claim["assets"])
         for identity in catalog_claim["assets"].values():

@@ -1,0 +1,12 @@
+{
+  "format_version": "rps-team-template-descriptor-v1",
+  "language_id": "typescript",
+  "language_environment": "typescript",
+  "team_source_path": "templates/typescript/team_source",
+  "participant_guidance_path": "templates/typescript/TEAM_GUIDE.md",
+  "build_and_test_entrypoint": "templates/typescript/build-and-test",
+  "version": "typescript-team-template-v1",
+  "expected_source_digest": "sha256:783b8b14abb63d96aac4875da9effa9ed6e1e3c5ad9a5a4fa1c97efec4d5cdd0",
+  "release_tag": "typescript-template-v1",
+  "advisory_validation_workflow": ".github/workflows/team-advisory-validation.yml"
+}
