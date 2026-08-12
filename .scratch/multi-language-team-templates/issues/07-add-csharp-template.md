@@ -35,8 +35,8 @@ behavior.
 
 ## Answer
 
-Added an independently selectable C# Team Template pinned to the exact
-`catalog-v6` Runner release. The starter implements the common `ChooseMove`
+Added an independently selectable C# Team Template pinned to the exact,
+independently proven `catalog-v8` Runner release. The starter implements the common `ChooseMove`
 contract with legal-move and same-seed deterministic tests. Its single
 C#-owned `build-and-test` entrypoint runs with a compatible native .NET 10 SDK
 or inside the catalog-pinned SDK 10.0.302 Docker image.
@@ -47,5 +47,7 @@ standard-library-only project. Complete participant-local Advisory Validation
 passed against the immutable C# Language Environment, including the Practice
 Match. Guidance documents the Team Source boundary, native and Docker modes,
 and Advisory/Final Validation authority. The template has its own descriptor,
-Source Digest, `csharp-team-template-v1` identity, and `csharp-template-v1`
-release tag without changing any other template release identity.
+Source Digest, `csharp-team-template-v2` identity, and `csharp-template-v2`
+replacement release tag without changing any other template release identity.
+The v2 release supersedes the immutable v1 release, whose offline-bundle
+coordinate did not match its named Catalog Release.

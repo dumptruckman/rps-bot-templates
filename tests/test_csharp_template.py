@@ -51,8 +51,8 @@ class CSharpTeamTemplateTests(unittest.TestCase):
         template = collection.select("csharp")
 
         self.assertEqual(template.language_environment, "csharp")
-        self.assertEqual(template.version, "csharp-team-template-v1")
-        self.assertEqual(template.release_tag, "csharp-template-v1")
+        self.assertEqual(template.version, "csharp-team-template-v2")
+        self.assertEqual(template.release_tag, "csharp-template-v2")
         self.assertEqual(
             template.team_source_path.as_posix(), "templates/csharp/team_source"
         )

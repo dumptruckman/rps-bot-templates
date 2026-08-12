@@ -76,7 +76,7 @@ and optional native check execute the same language-owned script. For Go:
 
 Replace `go` with `java` and use `java-template-v1` for the independent Java
 Template Release.
-Use `csharp` and `csharp-template-v1` for the independent C# Template Release.
+Use `csharp` and `csharp-template-v2` for the independent C# Template Release.
 
 ## Immutable compatibility contract
 

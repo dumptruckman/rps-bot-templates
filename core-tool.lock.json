@@ -84,7 +84,7 @@
   },
   "format_version": "rps-catalog-compatibility-v1",
   "offline_bundle": {
-    "identity": "rps-runner-offline-bundle-v1@sha256:e17b37d333192dabbc63ba78629ba568edb284d5e18d9482d6ae6eb41ee47066"
+    "identity": "rps-runner-offline-bundle-v1@sha256:f16fcba8659405bd6378444d00e8b8a4e0c25624e1c54cf2884a7c87adc90ade"
   },
   "runner": {
     "commit": "372d530537f7cf632f13748f14cec69051e81632",

@@ -62,7 +62,7 @@ For the Java Template Release, use the same collection boundary with
 `--template java` and the independent `java-template-v1` release tag.
 TypeScript uses `--template typescript` and the independent
 `typescript-template-v1` release tag.
-C# uses `--template csharp` and the independent `csharp-template-v1` release
+C# uses `--template csharp` and the independent `csharp-template-v2` release
 tag.
 
 ## Checklist for adding a Team Template
