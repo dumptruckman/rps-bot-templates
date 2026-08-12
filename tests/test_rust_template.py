@@ -104,6 +104,30 @@ class RustTeamTemplateTests(unittest.TestCase):
         self.assertIn("Rust starter tests passed", completed.stdout)
         self.assertIn("Team Template check passed: rust (docker)", completed.stdout)
 
+    @unittest.skipUnless(
+        os.environ.get("RPS_RUN_DOCKER_INTEGRATION") == "1",
+        "set RPS_RUN_DOCKER_INTEGRATION=1 to run Advisory Validation",
+    )
+    def test_catalog_v12_passes_participant_local_advisory_validation(self) -> None:
+        environment = os.environ.copy()
+        environment["RPS_CORE_PATH"] = str(self.core)
+        completed = subprocess.run(
+            [str(PROJECT_ROOT / "validate-team"), "--template", "rust"],
+            cwd=PROJECT_ROOT,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("Participant-local Advisory Validation passed", completed.stdout)
+        self.assertIn(
+            "rps-language-environment-catalog-v1@sha256:"
+            "67c9817d0e8b61b6d4a3844230fe4e316f0b2a18d4e88483f6c6be3a67a55ca7",
+            completed.stdout,
+        )
+        self.assertIn("Practice Match: passed", completed.stdout)
+
     def test_guidance_documents_boundaries_and_validation_authority(self) -> None:
         guidance = (PROJECT_ROOT / "templates/rust/TEAM_GUIDE.md").read_text()
         for phrase in (

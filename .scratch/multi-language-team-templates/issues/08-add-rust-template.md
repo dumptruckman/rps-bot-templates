@@ -43,7 +43,8 @@ and Docker modes, with an empty immutable dependency definition that satisfies
 the Runner's networkless policy.
 
 The repository consumes the exact `catalog-v12` offline bundle at Runner commit
-`5e2dae30f5cc99393047ae91a59679825555e90e`. All 99 collection tests passed,
-and all six Rust-specific tests passed against the pinned Docker toolchain.
+`5e2dae30f5cc99393047ae91a59679825555e90e`. All 100 collection tests passed,
+and all seven Rust-specific tests passed against the pinned Docker toolchain,
+including the complete participant-local Advisory Validation and practice Match.
 The collection and team guidance now advertise Rust and document Team Source
 ownership, prerequisites, Docker usage, and Advisory versus Final authority.
