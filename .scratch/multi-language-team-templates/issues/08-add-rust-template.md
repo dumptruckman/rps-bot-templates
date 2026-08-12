@@ -42,8 +42,8 @@ strategy contract and deterministic SplitMix64 seed behavior. Its Rust-owned
 and Docker modes, with an empty immutable dependency definition that satisfies
 the Runner's networkless policy.
 
-The repository consumes the exact `catalog-v11` offline bundle at Runner commit
-`61b755ea85617e00ba638979708bec7afd69de5f`. All 99 collection tests passed,
+The repository consumes the exact `catalog-v12` offline bundle at Runner commit
+`5e2dae30f5cc99393047ae91a59679825555e90e`. All 99 collection tests passed,
 and all six Rust-specific tests passed against the pinned Docker toolchain.
 The collection and team guidance now advertise Rust and document Team Source
 ownership, prerequisites, Docker usage, and Advisory versus Final authority.
