@@ -14,6 +14,23 @@ from template_collection import load_collection
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+def has_java_25_jdk() -> bool:
+    javac = shutil.which("javac")
+    java = shutil.which("java")
+    if javac is None or java is None:
+        return False
+    completed = subprocess.run(
+        [javac, "-version"], capture_output=True, text=True
+    )
+    if completed.returncode != 0:
+        return False
+    version = (completed.stdout or completed.stderr).strip().split()[-1]
+    try:
+        return int(version.split(".", 1)[0]) >= 25
+    except (ValueError, IndexError):
+        return False
+
+
 class JavaTeamTemplateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -51,6 +68,7 @@ class JavaTeamTemplateTests(unittest.TestCase):
             },
         )
 
+    @unittest.skipUnless(has_java_25_jdk(), "Java 25 JDK is required for native mode")
     def test_native_entrypoint_builds_and_tests_seeded_behavior(self) -> None:
         completed = subprocess.run(
             [str(PROJECT_ROOT / "templates/java/build-and-test")],
@@ -63,6 +81,7 @@ class JavaTeamTemplateTests(unittest.TestCase):
         self.assertIn("Java starter build passed", completed.stdout)
         self.assertIn("Java starter tests passed", completed.stdout)
 
+    @unittest.skipUnless(has_java_25_jdk(), "Java 25 JDK is required for native mode")
     def test_native_entrypoint_builds_the_complete_valid_team_source(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             template = Path(directory) / "java"
