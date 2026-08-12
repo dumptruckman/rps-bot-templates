@@ -78,7 +78,9 @@ class PythonTemplateMigrationTests(unittest.TestCase):
 
         self.assertEqual(completed.returncode, 2)
         self.assertIn("unknown Team Template 'rust'", completed.stderr)
-        self.assertIn("available: go, java, python, typescript", completed.stderr)
+        self.assertIn(
+            "available: csharp, go, java, python, typescript", completed.stderr
+        )
 
     def test_docker_mode_runs_the_identical_entrypoint_in_the_pinned_toolchain(self) -> None:
         self.write_executable(

@@ -12,6 +12,17 @@
       "contract-fixture.recipe": "contract-build-recipe-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
       "contract-fixture.workflow": "source-validation-workflow-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
       "contract-fixture.wrapper": "contract-wrapper-v1@sha256:2c01a7c87b1ab97368b809454b91b5051c80a40a4eb63bd3dd35ab321397c001",
+      "csharp.base_runtime": "csharp-runtime-v1@sha256:ed45f9845c468ab0c121e11db2782700dbdb5b2cac3f88047caa1c7e5a09c79f",
+      "csharp.build_target": "csharp-build-target-v1@sha256:7654969a9e92c355e41a9710884a8a95ba8ce465d37792b312af26ddaa42f1ed",
+      "csharp.build_toolchain": "csharp-build-toolchain-v1@sha256:ed45f9845c468ab0c121e11db2782700dbdb5b2cac3f88047caa1c7e5a09c79f",
+      "csharp.conformance": "csharp-conformance-v1@sha256:a1715ef34a2bfef92976a30ac490d498e913cbf2ae0ad4f1a8b4ae8235b98c6f",
+      "csharp.dependency_definition": "csharp-runtime-config-v1@sha256:6413e1e7988a6e9df20a9c8e6ee60b729892f37c0b83e009f80c15a67c63a139",
+      "csharp.entrypoint": "csharp-entrypoint-v1@sha256:48a41a172878403001e190b8d323d7e076514cec90da45cf8e082049693b55db",
+      "csharp.platform": "csharp-oci-platforms-v1@sha256:ed45f9845c468ab0c121e11db2782700dbdb5b2cac3f88047caa1c7e5a09c79f",
+      "csharp.readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
+      "csharp.recipe": "csharp-build-recipe-v1@sha256:7654969a9e92c355e41a9710884a8a95ba8ce465d37792b312af26ddaa42f1ed",
+      "csharp.workflow": "source-validation-workflow-v1@sha256:78ccccf3ae3b478e895d88746988a090aac5909372c7ce61b79f3af42c54b6a9",
+      "csharp.wrapper": "csharp-wrapper-v1@sha256:4eff87ce1fb7a09f08da2cfca7c39ab13b7049fedb4b8cd3efc86124c8e70f8a",
       "go.base_runtime": "go-runtime-v1@sha256:039edb9cbbb9a92f9b057a443fe9e41cc3b76e4517f8a0f8eabda9e4a3f7e02e",
       "go.build_target": "go-build-target-v1@sha256:86890e1d64cbb93ac4dccd6c733079a89c75e6ef397ddb2b0f84a056f863f5fe",
       "go.build_toolchain": "go-build-toolchain-v1@sha256:039edb9cbbb9a92f9b057a443fe9e41cc3b76e4517f8a0f8eabda9e4a3f7e02e",
@@ -68,15 +79,15 @@
       "typescript.workflow": "source-validation-workflow-v1@sha256:27b6b945599f6ab930a2f5bd7116d6e78d0e2097b52dc0e00210a7b7e7257dfd",
       "typescript.wrapper": "typescript-wrapper-v1@sha256:7c44b23c148b39cf7a53e8c1802fa0f05bbcf29d13ae740a06f8a31cfda2791d"
     },
-    "identity": "rps-language-environment-catalog-v1@sha256:c092fe676e170446d60c512d1e27daf32fc5c515b2ec889a5c1aec9df54e288d",
+    "identity": "rps-language-environment-catalog-v1@sha256:d105931abfa77b3e0dc67bf6f6b71e2fc0b0cede4b99ae05decd9b7c54688231",
     "path": "language_environments/catalog-v1/catalog.json"
   },
   "format_version": "rps-catalog-compatibility-v1",
   "offline_bundle": {
-    "identity": "rps-runner-offline-bundle-v1@sha256:4131a70cbaff3c36de50370df9989b2673838fb907369e5403d56aa659388074"
+    "identity": "rps-runner-offline-bundle-v1@sha256:e17b37d333192dabbc63ba78629ba568edb284d5e18d9482d6ae6eb41ee47066"
   },
   "runner": {
-    "commit": "791cb8551cd761b2df147a5f9ac1b6040cfa201c",
+    "commit": "372d530537f7cf632f13748f14cec69051e81632",
     "package_version": "0.1.0"
   }
 }

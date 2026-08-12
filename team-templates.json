@@ -16,6 +16,10 @@
     {
       "language_id": "typescript",
       "descriptor": "templates/typescript/team-template.json"
+    },
+    {
+      "language_id": "csharp",
+      "descriptor": "templates/csharp/team-template.json"
     }
   ]
 }

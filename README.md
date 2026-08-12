@@ -18,14 +18,16 @@ A fresh Team branch starts from one exact annotated Template Release of a
 selected Team Template. The collection includes independently released
 [Python](templates/python/team_source/strategy.py) and
 [Go](templates/go/team_source/strategy.go), and
-[Java](templates/java/team_source/Strategy.java), and
-[TypeScript](templates/typescript/team_source/strategy.ts) starters.
+[Java](templates/java/team_source/Strategy.java),
+[TypeScript](templates/typescript/team_source/strategy.ts), and
+[C#](templates/csharp/team_source/Strategy.cs) starters.
 Teams must change only the Team Source path named by their selected descriptor;
 the catalog and its build, wrapper, workflow, and protocol assets remain
 organizer-owned. See the [Python Team guide](templates/python/TEAM_GUIDE.md),
 [Go Team guide](templates/go/TEAM_GUIDE.md), or
-[Java Team guide](templates/java/TEAM_GUIDE.md), or
-[TypeScript Team guide](templates/typescript/TEAM_GUIDE.md)
+[Java Team guide](templates/java/TEAM_GUIDE.md),
+[TypeScript Team guide](templates/typescript/TEAM_GUIDE.md), or
+[C# Team guide](templates/csharp/TEAM_GUIDE.md)
 for the strategy contract, approved file types and limits, branch convention,
 and shared-repository honor policy.
 
@@ -74,6 +76,7 @@ and optional native check execute the same language-owned script. For Go:
 
 Replace `go` with `java` and use `java-template-v1` for the independent Java
 Template Release.
+Use `csharp` and `csharp-template-v1` for the independent C# Template Release.
 
 ## Immutable compatibility contract
 
@@ -103,9 +106,9 @@ The ownership boundary is deliberate:
   tree is maintained in this repository.
 
 [`team-templates.json`](team-templates.json) is the collection-aware discovery
-index. Its Python, Go, and Java descriptors independently bind each starter's Team
-Source, guidance, build-and-test entrypoint, matching Language Environment, and
-language-specific Template Release identity.
+index. Its Python, Go, Java, TypeScript, and C# descriptors independently bind
+each starter's Team Source, guidance, build-and-test entrypoint, matching
+Language Environment, and language-specific Template Release identity.
 
 ## Verify a compatibility-lock change
 
