@@ -67,6 +67,17 @@
       "python.recipe": "python-build-recipe-v1@sha256:8b805ad8a1541971fce3322a25d67dfc6f6e758d0f85033ab50c8974baf69696",
       "python.workflow": "source-validation-workflow-v1@sha256:a66d958d1eaf7ed7b36ecc3aa0192dd28a67a172ef810d42575a8c73b14ce6f4",
       "python.wrapper": "python-wrapper-v2@sha256:a82ae2481ad47d0697f318ccf09c5e8bd9597efbbca12f31366fc61d811baed7",
+      "rust.base_runtime": "rust-runtime-v1@sha256:a9cdcf7a41d257072284e9de7d2ec2bb9a2c2b72d4bc2f91cc10e778e3c501d2",
+      "rust.build_target": "rust-build-target-v1@sha256:c76430e5837e2721476cd1c2e027cffcedbeaa0b13ece9da10050f4e84c7e402",
+      "rust.build_toolchain": "rust-build-toolchain-v1@sha256:a9cdcf7a41d257072284e9de7d2ec2bb9a2c2b72d4bc2f91cc10e778e3c501d2",
+      "rust.conformance": "rust-conformance-v1@sha256:7172f4efce0ce634878b82d2360da54ba4815099c036eebd3b2d324c0e0dffc7",
+      "rust.dependency_definition": "rust-dependencies-v1@sha256:059c097404299f00bf5a9b26bec0831f8aaad0b6867913255f6fda0d747300cc",
+      "rust.entrypoint": "rust-entrypoint-v1@sha256:20eea82924a1bb765e76ae621aa86fae717456d1194291cdb0f99982e4fdbbda",
+      "rust.platform": "rust-oci-platforms-v1@sha256:a9cdcf7a41d257072284e9de7d2ec2bb9a2c2b72d4bc2f91cc10e778e3c501d2",
+      "rust.readiness": "wrapper-readiness-v1@sha256:d685b537ddbbd8bdca851284996c6441d264049fd2de006bfa5e6a77d8a0a458",
+      "rust.recipe": "rust-build-recipe-v1@sha256:c76430e5837e2721476cd1c2e027cffcedbeaa0b13ece9da10050f4e84c7e402",
+      "rust.workflow": "source-validation-workflow-v1@sha256:1324de81cde7816814ddf1f2aa0f1c12e52b77d76a430baec09db0fca9169af8",
+      "rust.wrapper": "rust-wrapper-v1@sha256:ca713ed638f7ba6220cdf70da320aa45acd061e07746aadda4451b31d960b1ab",
       "typescript.base_runtime": "typescript-runtime-v1@sha256:e3eb05b29af82bbc272ccc7630c283e86fdfb0846deb0a3dccf7628a67912847",
       "typescript.build_target": "typescript-build-target-v1@sha256:233e3544f4db6d99c51dde9fa3970a6fcf865b87b679a7369356ee1801dc3bf4",
       "typescript.build_toolchain": "typescript-build-toolchain-v1@sha256:e3eb05b29af82bbc272ccc7630c283e86fdfb0846deb0a3dccf7628a67912847",
@@ -79,15 +90,15 @@
       "typescript.workflow": "source-validation-workflow-v1@sha256:27b6b945599f6ab930a2f5bd7116d6e78d0e2097b52dc0e00210a7b7e7257dfd",
       "typescript.wrapper": "typescript-wrapper-v1@sha256:7c44b23c148b39cf7a53e8c1802fa0f05bbcf29d13ae740a06f8a31cfda2791d"
     },
-    "identity": "rps-language-environment-catalog-v1@sha256:d105931abfa77b3e0dc67bf6f6b71e2fc0b0cede4b99ae05decd9b7c54688231",
+    "identity": "rps-language-environment-catalog-v1@sha256:ee723cf29a716d606e584956621943fb81c989af71589370afdf53752ecc994c",
     "path": "language_environments/catalog-v1/catalog.json"
   },
   "format_version": "rps-catalog-compatibility-v1",
   "offline_bundle": {
-    "identity": "rps-runner-offline-bundle-v1@sha256:f16fcba8659405bd6378444d00e8b8a4e0c25624e1c54cf2884a7c87adc90ade"
+    "identity": "rps-runner-offline-bundle-v1@sha256:92bdf43213fdb75cfeb096fd896997be8ac32c785c93d02ec71ab6d9756ac6fd"
   },
   "runner": {
-    "commit": "372d530537f7cf632f13748f14cec69051e81632",
+    "commit": "61b755ea85617e00ba638979708bec7afd69de5f",
     "package_version": "0.1.0"
   }
 }

@@ -20,6 +20,10 @@
     {
       "language_id": "csharp",
       "descriptor": "templates/csharp/team-template.json"
+    },
+    {
+      "language_id": "rust",
+      "descriptor": "templates/rust/team-template.json"
     }
   ]
 }
