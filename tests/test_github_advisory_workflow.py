@@ -71,7 +71,7 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
             "CATALOG: language_environments/catalog-v1/catalog.json", workflow
         )
 
-    def test_ephemeral_runner_fetches_only_the_catalog_pinned_base_runtime(self) -> None:
+    def test_ephemeral_runner_fetches_all_catalog_pinned_language_images(self) -> None:
         workflow = self.workflow
 
         self.assertIn(
@@ -81,11 +81,13 @@ class GithubAdvisoryWorkflowTests(unittest.TestCase):
             workflow.count('load_catalog(Path(os.environ["CATALOG"]))'), 2
         )
         self.assertIn('assets["base_runtime"].content', workflow)
+        self.assertIn('selected["build_toolchain"]["image"]', workflow)
+        self.assertIn('selected["execution_runtime"]["image"]', workflow)
         self.assertIn(
-            'selected["build_toolchain"]["image"]', workflow
+            'docker pull --platform "$PLATFORM" "$image_reference"', workflow
         )
         self.assertIn(
-            'docker pull --platform "$PLATFORM" "$runtime_reference"', workflow
+            'for image_reference in "${language_image_references[@]}"', workflow
         )
         self.assertNotIn(
             'with open("language_environments/catalog-v1/python/runtimes.json")',

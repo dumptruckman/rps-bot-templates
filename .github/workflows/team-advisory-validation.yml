@@ -108,7 +108,7 @@ jobs:
       - name: Cache the pinned Linux/AMD64 toolchain and runtime
         if: steps.template_release.outcome == 'success'
         run: |
-          runtime_reference="$(python3 - <<'PY'
+          mapfile -t language_image_references < <(python3 - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -121,10 +121,16 @@ jobs:
               ).assets["base_runtime"].content
           )
           selected = runtimes["platforms"]["linux/amd64"]
-          print(selected["build_toolchain"]["image"])
+          for reference in sorted({
+              selected["build_toolchain"]["image"],
+              selected["execution_runtime"]["image"],
+          }):
+              print(reference)
           PY
-          )"
-          docker pull --platform "$PLATFORM" "$runtime_reference"
+          )
+          for image_reference in "${language_image_references[@]}"; do
+            docker pull --platform "$PLATFORM" "$image_reference"
+          done
       - name: Build and test the Team Template in its pinned toolchain
         if: steps.template_release.outcome == 'success'
         env:

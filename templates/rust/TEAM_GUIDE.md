@@ -49,7 +49,8 @@ Release toolchain with networking disabled:
 ./check-team-template --template rust --mode docker
 ```
 
-`./validate-team --template rust` performs participant-local **Advisory Validation**
+`./validate-team --template rust --allow-pull` performs participant-local
+**Advisory Validation**
 against the exact pinned Rust Language Environment. It gives
 compatibility feedback, including a Practice Match, but cannot accept a Bot
 Artifact. Only organizer-controlled **Final Validation** on the official ARM64

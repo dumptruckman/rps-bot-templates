@@ -58,7 +58,7 @@ The organizer-owned conformance suite separately verifies the Seed Adapter.
 Run the complete pinned container contract with:
 
 ```sh
-./validate-team --template go
+./validate-team --template go --allow-pull
 ```
 
 This is Advisory Validation only: it freezes Team Source and checks build,

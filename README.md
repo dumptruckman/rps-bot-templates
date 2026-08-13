@@ -37,8 +37,12 @@ Teams with a running Docker engine can exercise the entire Advisory Validation
 path with one command:
 
 ```sh
-./validate-team --template python
+./validate-team --template python --allow-pull
 ```
+
+`--allow-pull` lets Docker acquire only missing toolchain and runtime images
+from the exact digest-pinned Catalog Release. Image acquisition happens before
+the build; Team Source builds and Bot Artifact execution remain networkless.
 
 See the [Python Team guide](templates/python/TEAM_GUIDE.md#validate-your-team-source) for the pinned-core
 checkout prerequisite, result identities, diagnostic categories, and the firm
@@ -72,7 +76,7 @@ and optional native check execute the same language-owned script. For Go:
 ```sh
 ./check-team-template --template go --mode docker
 ./check-team-template --template go --mode native
-./validate-team --template go
+./validate-team --template go --allow-pull
 ./release-team-template --template go manifest go-template-v1
 ```
 

@@ -32,6 +32,8 @@ class TeamValidationCommandTests(unittest.TestCase):
         package = self.core / "rps_runner"
         (package / "__init__.py").write_text("")
         self.log = self.root / "calls.jsonl"
+        self.docker_log = self.root / "docker-calls.txt"
+        self.pulled_images = self.root / "pulled-images.txt"
         self._write_executable(
             "git",
             """
@@ -54,6 +56,17 @@ class TeamValidationCommandTests(unittest.TestCase):
             if [ "$1" = version ]; then
               printf '%s\\n' "${RPS_TEST_PLATFORM:-linux/arm64}"
               exit 0
+            fi
+            printf '%s\\n' "$*" >> "$RPS_TEST_DOCKER_LOG"
+            if [ "$1 $2" = "image inspect" ] && [ "${RPS_TEST_MISSING_IMAGES:-}" ]; then
+              if [ -f "$RPS_TEST_PULLED_IMAGES" ] && grep -Fqx "$3" "$RPS_TEST_PULLED_IMAGES"; then
+                exit 0
+              fi
+              printf '%s\\n' "No such image: $3" >&2
+              exit 1
+            fi
+            if [ "$1" = pull ]; then
+              printf '%s\\n' "$4" >> "$RPS_TEST_PULLED_IMAGES"
             fi
             exit 0
             """,
@@ -173,6 +186,8 @@ class TeamValidationCommandTests(unittest.TestCase):
                 "RPS_CORE_PATH": str(self.core),
                 "RPS_TEST_CORE_COMMIT": LOCK["runner"]["commit"],
                 "RPS_TEST_LOG": str(self.log),
+                "RPS_TEST_DOCKER_LOG": str(self.docker_log),
+                "RPS_TEST_PULLED_IMAGES": str(self.pulled_images),
             }
         )
         process_environment.update(environment)
@@ -187,6 +202,9 @@ class TeamValidationCommandTests(unittest.TestCase):
 
     def calls(self) -> list[dict[str, object]]:
         return [json.loads(line) for line in self.log.read_text().splitlines()]
+
+    def docker_calls(self) -> list[str]:
+        return self.docker_log.read_text().splitlines()
 
     def test_one_command_delegates_the_native_advisory_workflow_to_pinned_core(self) -> None:
         completed = self.run_command(RPS_TEST_PLATFORM="linux/arm64")
@@ -253,6 +271,44 @@ class TeamValidationCommandTests(unittest.TestCase):
             source_call[source_call.index("--environment") + 1], "python"
         )
 
+    def test_allow_pull_acquires_both_pinned_images_before_java_validation(self) -> None:
+        completed = self.run_command(
+            "--template",
+            "java",
+            "--allow-pull",
+            RPS_TEST_MISSING_IMAGES="1",
+            RPS_TEST_PLATFORM="linux/arm64",
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        runtime_definition = json.loads(
+            (
+                self.core
+                / "language_environments/catalog-v1/java/runtimes.json"
+            ).read_text()
+        )["platforms"]["linux/arm64"]
+        expected = {
+            runtime_definition["build_toolchain"]["image"],
+            runtime_definition["execution_runtime"]["image"],
+        }
+        pulls = {
+            call.removeprefix("pull --platform linux/arm64 ")
+            for call in self.docker_calls()
+            if call.startswith("pull ")
+        }
+        self.assertEqual(pulls, expected)
+
+    def test_allow_pull_acquires_a_shared_toolchain_runtime_only_once(self) -> None:
+        completed = self.run_command(
+            "--allow-pull",
+            RPS_TEST_MISSING_IMAGES="1",
+            RPS_TEST_PLATFORM="linux/arm64",
+        )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        pulls = [call for call in self.docker_calls() if call.startswith("pull ")]
+        self.assertEqual(len(pulls), 1)
+
     def test_team_facing_diagnostics_name_each_failure_area(self) -> None:
         cases = (
             ("source", "invalid strategy signature", "Team Source failure"),
@@ -318,10 +374,13 @@ class TeamValidationCommandTests(unittest.TestCase):
     def test_team_guide_documents_the_one_command_and_advisory_limit(self) -> None:
         guide = (PROJECT_ROOT / "templates/python/TEAM_GUIDE.md").read_text()
         normalized_guide = " ".join(guide.split())
+        readme = " ".join((PROJECT_ROOT / "README.md").read_text().split())
 
         self.assertIn("./validate-team", guide)
+        self.assertIn("--allow-pull", guide)
         self.assertIn("GitHub Advisory Validation", normalized_guide)
         self.assertIn("insufficient for official Tournament entry", normalized_guide)
+        self.assertIn("Bot Artifact execution remain networkless", readme)
 
 
 if __name__ == "__main__":

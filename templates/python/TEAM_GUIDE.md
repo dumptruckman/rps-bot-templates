@@ -66,7 +66,7 @@ After the starter check passes, run the complete container contract against the
 matching Python Language Environment from the exact pinned Catalog Release:
 
 ```sh
-./validate-team --template python
+./validate-team --template python --allow-pull
 ```
 
 This freezes Team Source, builds a disposable confidence image, and exercises
